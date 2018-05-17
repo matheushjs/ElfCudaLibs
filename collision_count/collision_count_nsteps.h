@@ -21,7 +21,7 @@
  *   - The number of threads allocated equals exactly N-1
  *   - N-1 is lower than the maximum number of threads per block
  *
- * Required Shared Memory: threadsAllocated integer elements.
+ * Required Shared Memory (in bytes): threadsAllocated * sizeof(integer)
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int lower2Power){
@@ -48,7 +48,8 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power){
 	sdata[tid] = collisions;
 	__syncthreads();
 
-	// Apply one reduce iteration, to force the element pool to have a power of 2 size.
+	// Apply one reduce iteration that forces the working vector
+	//   size to be a power of 2.
 	if(tid < lower2Power && tid+lower2Power < blockDim.x)
 		sdata[tid] += sdata[tid+lower2Power];
 	__syncthreads();
@@ -87,12 +88,25 @@ count_collisions_launch(int3 *vector, int size){
 	while(pow2 < size) pow2 <<= 1;
 	pow2 >>= 1;
 
+	// Allocate cuda streams in the first execution
+	const int nStreams = 8;
+	static cudaStream_t streams[nStreams];
+	static int streamInit = 0;
+	if(streamInit == 0){
+		streamInit = 1;
+		for(int i = 0; i < nStreams; i++){
+			cudaStreamCreate(&streams[i]);
+		}
+	}
+	static unsigned int launches = 0;
+	launches++;
+
 	int3 *d_vector;
 	int *d_result;
 
 	// Allocate cuda vector for the 3D coordinates
 	cudaMalloc(&d_vector, sizeof(int3) * size);
-	cudaMemcpy(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice);
+	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, streams[launches%nStreams]);
 
 	// Allocate cuda memory for the number of collisions
 	cudaMalloc(&d_result, sizeof(int));
@@ -100,7 +114,8 @@ count_collisions_launch(int3 *vector, int size){
 	// Launch kernel
 	int nThreads = size - 1;
 	int nShMem = nThreads * sizeof(int);
-	count_collisions_cu<<<1, nThreads, nShMem>>>(d_vector, d_result, pow2);
+	count_collisions_cu<<<1, nThreads, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, pow2);
+	launches++;
 
 	const struct CollisionCountPromise ret = { d_vector, d_result };
 	return ret;
