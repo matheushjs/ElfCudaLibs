@@ -33,8 +33,26 @@ int3 dummy[] = {
 		{0, 0, 0}  // 18
 }; // There are 5 {0,0,0}, meaning 4 + 3 + 2 + 1 = 10 collisions
 
+int3 *create_vector(int size){
+	int i;
+	int3 *result = (int3 *) malloc(sizeof(int3) * size);
+
+	for(i = 0; i < size; i++){
+		result[i].x = 0;
+		result[i].y = 0;
+		result[i].z = i;
+	}
+
+	return result;
+}
+
 int main(int argc, char *argv[]){
-	test_count(dummy, sizeof(dummy) / (3 * sizeof(int)), 100000);
+	int vecSize = 1000;
+	int iters = 10000;
+
+	int3 *vec = create_vector(vecSize);
+	test_count(vec, vecSize, iters);
+	free(vec);
 
 	return 0;
 }
