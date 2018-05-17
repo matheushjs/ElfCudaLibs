@@ -2,6 +2,7 @@
 #define COLLISION_COUNT_NSTEPS_H_
 
 #include <cuda.h>
+#include <stdlib.h>
 
 #include "gpu_timer.h"
 
@@ -65,11 +66,22 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power){
 		*result = sdata[0];
 }
 
+
+struct CollisionCountPromise {
+	int3 *d_vector;
+	int *d_result;
+};
+
 /* Given a vector with 3D coordinates of points in the space,
  *   this function calculates the number of collisions among
  *   points, using CUDA-enable GPU.
+ *
+ * This functions just launches the kernel, returning a
+ *   structure that can later be used to fetch the result
+ *   back from the device memory.
  */
-int count_collisions(int3 *vector, int size){
+struct CollisionCountPromise
+count_collisions_launch(int3 *vector, int size){
 	// We find the power of 2 immediately below 'size'
 	int pow2 = 1;
 	while(pow2 < size) pow2 <<= 1;
@@ -88,19 +100,45 @@ int count_collisions(int3 *vector, int size){
 	// Launch kernel
 	int nThreads = size - 1;
 	int nShMem = nThreads * sizeof(int);
+	count_collisions_cu<<<1, nThreads, nShMem>>>(d_vector, d_result, pow2);
+
+	const struct CollisionCountPromise ret = { d_vector, d_result };
+	return ret;
+}
+
+/* This procedure fetches the result from the call to the
+ *   _launch correspondent.
+ * The pointers within the promise structure are freed, so
+ *   it shouldn't be used anywhere after a call to this function.
+ */
+int count_collisions_fetch(struct CollisionCountPromise promise){
+	int result;
+	cudaMemcpy(&result, promise.d_result, sizeof(int), cudaMemcpyDeviceToHost);
+
+	cudaFree(&promise.d_result);
+	cudaFree(&promise.d_vector);
+
+	return result;
+}
+
+void test_count(int3 *vector, int size, int iters){
+	struct CollisionCountPromise *promises;
+	promises = (struct CollisionCountPromise *) malloc(sizeof(struct CollisionCountPromise) * iters);
 
 	GpuTimer timer;
 	timer.start();
-	for(int i = 0; i < 5000; i++)
-		count_collisions_cu<<<1, nThreads, nShMem>>>(d_vector, d_result, pow2);
+
+	int i;
+	for(i = 0; i < iters; i++){
+		promises[i] = count_collisions_launch(vector, size);
+	}
+
+	for(i = 0; i < iters; i++){
+		int res = count_collisions_fetch(promises[i]);
+	}
+
 	timer.stop();
-	printf("Elapsed: %lf ms\n", timer.elapsed());
-
-	// Fetch result
-	int result;
-	cudaMemcpy(&result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
-
-	return result;
+	printf("Elapsed: %lf\n", timer.elapsed());
 }
 
 #endif /* COLLISION_COUNT_NSTEPS_H_ */
