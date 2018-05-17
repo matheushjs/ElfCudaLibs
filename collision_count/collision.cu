@@ -1,7 +1,15 @@
 #include <stdio.h>
 #include <cuda.h>
 
-#include "collision_count_nsteps.h"
+#define METHOD 0
+
+#if METHOD == 0
+	#include "collision_count_nsteps.h"
+#elif METHOD == 1
+	#include "collision_count_sequential.h"
+#else
+	#error "Fix method mate."
+#endif
 
 int3 dummy[] = {
 		{0, 0, 0}, // 0
@@ -26,7 +34,7 @@ int3 dummy[] = {
 }; // There are 5 {0,0,0}, meaning 4 + 3 + 2 + 1 = 10 collisions
 
 int main(int argc, char *argv[]){
-	int coll = count_collisions(dummy, sizeof(dummy) / (3 * sizeof(int)));
-	printf("Collisions: %d\n", coll);
+	test_count(dummy, sizeof(dummy) / (3 * sizeof(int)), 100000);
+
 	return 0;
 }
