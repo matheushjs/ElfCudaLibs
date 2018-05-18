@@ -28,6 +28,15 @@ N Steps
 	- **usage of 8 cuda streams, with asynchronous memcpy and kernel launch**
 	
 
+Half Steps
+---
+
+- 4119.598145 ms
+	- use of shared memory
+	- fitting the vector to a power of 2
+	- launch & fetch separation
+	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
+
 Sequential
 ---
 
