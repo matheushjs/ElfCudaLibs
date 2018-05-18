@@ -120,7 +120,6 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Finally launch kernel
 	count_collisions_cu<<<1, nThreads, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, pow2);
-	launches++;
 
 	const struct CollisionCountPromise ret = { d_vector, d_result };
 	return ret;
