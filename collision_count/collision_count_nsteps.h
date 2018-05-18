@@ -83,11 +83,6 @@ struct CollisionCountPromise {
  */
 struct CollisionCountPromise
 count_collisions_launch(int3 *vector, int size){
-	// We find the power of 2 immediately below 'size'
-	int pow2 = 1;
-	while(pow2 < size) pow2 <<= 1;
-	pow2 >>= 1;
-
 	// Allocate cuda streams in the first execution
 	const int nStreams = 8;
 	static cudaStream_t streams[nStreams];
@@ -111,9 +106,19 @@ count_collisions_launch(int3 *vector, int size){
 	// Allocate cuda memory for the number of collisions
 	cudaMalloc(&d_result, sizeof(int));
 
-	// Launch kernel
+
+	// Prepare to launch kernel
 	int nThreads = size - 1;
 	int nShMem = nThreads * sizeof(int);
+
+	// We find the power of 2 immediately below 'nThreads'
+	// It is more efficient if its strictly below, and not equal 'nThreads'
+	// We calculate this here to avoid calculating it into the GPU
+	int pow2 = 1;
+	while(pow2 < nThreads) pow2 <<= 1;
+	pow2 >>= 1;
+
+	// Finally launch kernel
 	count_collisions_cu<<<1, nThreads, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, pow2);
 	launches++;
 
