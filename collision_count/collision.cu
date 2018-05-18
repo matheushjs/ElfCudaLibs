@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <cuda.h>
 
-#define METHOD 0
+#define METHOD 1
 
 #if METHOD == 0
 	#include "collision_count_nsteps.h"
 #elif METHOD == 1
+	#include "collision_count_halfsteps.h"
+#elif METHOD == 2
 	#include "collision_count_sequential.h"
 #else
 	#error "Fix method mate."
