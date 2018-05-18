@@ -31,7 +31,7 @@ N Steps
 Half Steps
 ---
 
-- 4119.598145 ms
+- 4121.961426 ms
 	- use of shared memory
 	- fitting the vector to a power of 2
 	- launch & fetch separation

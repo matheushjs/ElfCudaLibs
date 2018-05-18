@@ -32,9 +32,15 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power){
 	// The number of elements in 'coords' is exactly the number of threads
 	int N = blockDim.x;
 
+	// We check if N is even (we hoṕe the compiler will inline this
+	char isOdd = (N & 0x01);
+
 	// Calculate the number of iterations S* (S star); we call it 'star'
 	// Purposely truncated to the floow if N is odd.
 	int star = (N - 2)/2;
+
+	// If N is odd, we want the for-loop below to include one more iteration
+	star += isOdd;
 
 	// Count collisions
 	int collisions = 0;
@@ -51,7 +57,7 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power){
 
 	// If N is even, we MUST perform another iteration
 	// Only half the threads perform it, though (this is warp-efficient also).
-	if( (N & 0x01) == 0 && tid < (N/2)){
+	if( !isOdd && tid < (N/2)){
 		int nextId = (tid + 1 + j + N) % N;
 
 		collisions += (
