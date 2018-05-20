@@ -37,6 +37,17 @@ Half Steps
 	- launch & fetch separation
 	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
 
+Single Steps
+---
+
+- 10023.894531 ms
+	- use of shared memory
+	- assumption that number of threads per block is a power of 2
+	- launch & fetch separation
+	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
+	- usage of multiple blocks
+	- reduce happening in the CPU
+
 Sequential
 ---
 
