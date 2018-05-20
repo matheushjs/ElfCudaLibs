@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <cuda.h>
 
-#define METHOD 2
+#define METHOD 4
 
 #if METHOD == 0
 	#include "collision_count_nsteps.cuh"
@@ -11,6 +12,8 @@
 	#include "collision_count_singlestep.cuh"
 #elif METHOD == 3
 	#include "collision_count_sequential.cuh"
+#elif METHOD == 4
+	#include "collision_count_sequential_linear.cuh"
 #else
 	#error "Fix method mate."
 #endif
@@ -52,6 +55,11 @@ int3 *create_vector(int size){
 		result[i].x = 0;
 		result[i].y = 0;
 		result[i].z = i % (size/2);
+
+		// Randomize due to caching effects
+		// result[i].x = rand() % (size/2);
+		// result[i].y = rand() % (size/2);
+		// result[i].z = rand() % (size/2);
 	}
 
 	printf("Collisions expected: %d\n", size/2);
@@ -68,7 +76,7 @@ void t2(){
 	// int vecSize = 1000;
 	// int iters = 10000;
 
-	int vecSize = 1000;
+	int vecSize = 700;
 	int iters = 10000;
 
 	int3 *vec = create_vector(vecSize);
