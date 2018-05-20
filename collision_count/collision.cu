@@ -48,13 +48,21 @@ int3 *create_vector(int size){
 	return result;
 }
 
-int main(int argc, char *argv[]){
+void t1(){
+	int dummySize = sizeof(dummy) / sizeof(int3);
+	test_count(dummy, dummySize, 1);
+}
+
+void t2(){
 	int vecSize = 1000;
 	int iters = 10000;
 
 	int3 *vec = create_vector(vecSize);
 	test_count(vec, vecSize, iters);
 	free(vec);
+}
 
+int main(int argc, char *argv[]){
+	t1();
 	return 0;
 }
