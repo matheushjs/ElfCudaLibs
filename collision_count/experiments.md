@@ -52,3 +52,20 @@ Sequential
 ---
 
 - 25222.143000 ms
+
+- 4600.959000 ms
+	- **With O3**
+	- **Volatile trick to prevent loop removal**
+
+Sequential Linear
+---
+
+- 152.499000 ms 
+	- Using size/2 due to memory allocation problem
+	- Randomizing vector to prevent cache effects
+
+- 90.898000 ms
+	- Using size/2 due to memory allocation problem
+	- Randomizing vector to prevent cache effects
+	- **With O3**
+
