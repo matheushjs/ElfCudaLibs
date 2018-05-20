@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <cuda.h>
 
-#define METHOD 4
+#define METHOD 3
 
 #if METHOD == 0
 	#include "collision_count_nsteps.cuh"
@@ -76,7 +76,7 @@ void t2(){
 	// int vecSize = 1000;
 	// int iters = 10000;
 
-	int vecSize = 700;
+	int vecSize = 1000;
 	int iters = 10000;
 
 	int3 *vec = create_vector(vecSize);

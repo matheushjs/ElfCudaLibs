@@ -30,7 +30,10 @@ void test_count(int3 *vector, int size, int iters){
 
 	int beg = clock();
 	for(i = 0; i < iters; i++){
-		count_collisions(vector, size);
+		int res = count_collisions(vector, size);
+
+		volatile int a;
+		a = res;
 	}
 	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
 }
