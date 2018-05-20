@@ -4,7 +4,7 @@
 #include <cuda.h>
 #include <stdlib.h>
 
-#include "gpu_timer.h"
+#include "gpu_timer.cuh"
 
 /*
  * Collision Count procedure implemented in CUDA.

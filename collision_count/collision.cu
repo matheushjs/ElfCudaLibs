@@ -4,11 +4,11 @@
 #define METHOD 1
 
 #if METHOD == 0
-	#include "collision_count_nsteps.h"
+	#include "collision_count_nsteps.cuh"
 #elif METHOD == 1
-	#include "collision_count_halfsteps.h"
+	#include "collision_count_halfsteps.cuh"
 #elif METHOD == 2
-	#include "collision_count_sequential.h"
+	#include "collision_count_sequential.cuh"
 #else
 	#error "Fix method mate."
 #endif
