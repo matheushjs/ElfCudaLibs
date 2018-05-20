@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <cuda.h>
 
-#define METHOD 1
+#define METHOD 2
 
 #if METHOD == 0
 	#include "collision_count_nsteps.cuh"
 #elif METHOD == 1
 	#include "collision_count_halfsteps.cuh"
 #elif METHOD == 2
+	#include "collision_count_singlestep.cuh"
+#elif METHOD == 3
 	#include "collision_count_sequential.cuh"
 #else
 	#error "Fix method mate."
@@ -35,6 +37,13 @@ int3 dummy[] = {
 		{0, 0, 0}  // 18
 }; // There are 5 {0,0,0}, meaning 4 + 3 + 2 + 1 = 10 collisions
 
+int3 dummy2[] = {
+	{0, 0, 0},
+	{0, 0, 0},
+	{1, 0, 0},
+	{1, 0, 0}
+}; // 2 collision
+
 int3 *create_vector(int size){
 	int i;
 	int3 *result = (int3 *) malloc(sizeof(int3) * size);
@@ -42,8 +51,10 @@ int3 *create_vector(int size){
 	for(i = 0; i < size; i++){
 		result[i].x = 0;
 		result[i].y = 0;
-		result[i].z = i;
+		result[i].z = i % (size/2);
 	}
+
+	printf("Collisions expected: %d\n", size/2);
 
 	return result;
 }
@@ -54,6 +65,9 @@ void t1(){
 }
 
 void t2(){
+	// int vecSize = 1000;
+	// int iters = 10000;
+
 	int vecSize = 1000;
 	int iters = 10000;
 
@@ -63,6 +77,6 @@ void t2(){
 }
 
 int main(int argc, char *argv[]){
-	t1();
+	t2();
 	return 0;
 }
