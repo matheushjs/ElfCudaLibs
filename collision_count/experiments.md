@@ -27,6 +27,10 @@ N Steps
 	- launch & fetch separation
 	- **usage of 8 cuda streams, with asynchronous memcpy and kernel launch**
 	
+- Single execution information:
+	- Average memcpy time: 2.9520us
+	- Average malloc time: 13.027us
+	- Average kernel time: 822.37us
 
 Half Steps
 ---
@@ -36,6 +40,11 @@ Half Steps
 	- fitting the vector to a power of 2
 	- launch & fetch separation
 	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
+
+- Single execution information:
+	- Average memcpy time: 2.9780us
+	- Average malloc time: 12.804us
+	- Average kernel time: 811.25us
 
 Single Steps
 ---
@@ -47,6 +56,11 @@ Single Steps
 	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
 	- usage of multiple blocks
 	- reduce happening in the CPU
+
+- Single execution information:
+	- Average memcpy time: 3.2730us
+	- Average malloc time: 12.628us
+	- Average kernel time: 977.95us
 
 Sequential
 ---
