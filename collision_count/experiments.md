@@ -71,6 +71,18 @@ Sequential
 	- **With O3**
 	- **Volatile trick to prevent loop removal**
 
+- 3816.593000 ms
+	- **With O3 only for the collision count function**
+	- **No more volatile trick**
+	- **Beads positioned along the z-axis, sequentially in the interval [0, size/2], in a circular fashion.**
+	- Average collision count time: 0.3816593us
+
+- 1779.082000 ms
+	- With O3 only for the collision count function
+	- No more volatile trick
+	- **Beads positioned randomly along all the space**
+	- Average collision count time: 0.1779082us
+
 Sequential Linear
 ---
 
