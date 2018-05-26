@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <cuda.h>
 
-#define METHOD 3
+#ifndef METHOD
+	#define METHOD 1
+#endif
 
 #if METHOD == 0
 	#include "collision_count_nsteps.cuh"
