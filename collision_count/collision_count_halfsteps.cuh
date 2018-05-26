@@ -5,8 +5,7 @@
 
 #include <cuda.h>
 #include <stdlib.h>
-
-#include "gpu_timer.cuh"
+#include <time.h>
 
 /*
  * Collision Count procedure implemented in CUDA.
@@ -169,8 +168,7 @@ void test_count(int3 *vector, int size, int iters){
 	struct CollisionCountPromise *promises;
 	promises = (struct CollisionCountPromise *) malloc(sizeof(struct CollisionCountPromise) * iters);
 
-	GpuTimer timer;
-	timer.start();
+	int beg = clock();
 
 	int i;
 	for(i = 0; i < iters; i++){
@@ -181,8 +179,7 @@ void test_count(int3 *vector, int size, int iters){
 		int res = count_collisions_fetch(promises[i]);
 	}
 
-	timer.stop();
-	printf("Elapsed: %lf\n", timer.elapsed());
+	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
 }
 
 #endif /* COLLISION_COUNT_HALFSTEPS_H_ */
