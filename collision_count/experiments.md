@@ -155,3 +155,12 @@ Sequential Linear
 	- Randomizing vector to prevent cache effects
 	- **With O3**
 
+- 289.722000 ms
+	- Randomizing vector to prevent cache effects
+	- **Using full memory required**
+	- **No O3**
+
+- 150.919000 ms
+	- Randomizing vector to prevent cache effects
+	- Using full memory required
+	- **With O3**
