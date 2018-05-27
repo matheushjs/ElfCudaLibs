@@ -24,22 +24,13 @@
  *   - The amount of shared memory available is:  nThreads * sizeof(int) bytes
  */
 __global__
-void count_collisions_cu(int3 *coords, int *result, int lower2Power){
+void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd, int star){
 	// We get our ID
 	int tid = threadIdx.x;
 	
 	// The number of elements in 'coords' is exactly the number of threads
 	int N = blockDim.x;
 
-	// We check if N is even (we hoṕe the compiler will inline this
-	char isOdd = (N & 0x01);
-
-	// Calculate the number of iterations S* (S star); we call it 'star'
-	// Purposely truncated to the floow if N is odd.
-	int star = (N - 2)/2;
-
-	// If N is odd, we want the for-loop below to include one more iteration
-	star += isOdd;
 
 	// Count collisions
 	int collisions = 0;
@@ -134,6 +125,14 @@ count_collisions_launch(int3 *vector, int size){
 	// Prepare to launch kernel
 	int nThreads = size;
 	int nShMem = nThreads * sizeof(int);
+	char isOdd = (size & 0x01);
+
+	// Calculate the number of iterations S* (S star); we call it 'star'
+	// Purposely truncated to the floow if N is odd.
+	int star = (size - 2)/2;
+
+	// If 'size' is odd, we want to include one more iteration
+	star += isOdd;
 
 	// We find the power of 2 immediately below 'nThreads'
 	// It is more efficient if its strictly below, and not equal 'nThreads'
@@ -143,7 +142,7 @@ count_collisions_launch(int3 *vector, int size){
 	pow2 >>= 1;
 
 	// Finally launch kernel
-	count_collisions_cu<<<1, nThreads, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, pow2);
+	count_collisions_cu<<<1, nThreads, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, pow2, isOdd, star);
 
 	const struct CollisionCountPromise ret = { d_vector, d_result };
 	return ret;
