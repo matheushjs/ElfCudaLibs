@@ -50,14 +50,14 @@ int3 *create_vector(int size){
 	int3 *result = (int3 *) malloc(sizeof(int3) * size);
 
 	for(i = 0; i < size; i++){
-		result[i][0] = 0;
-		result[i][1] = 0;
-		result[i][2] = i % (size/2);
+		// result[i][0] = 0;
+		// result[i][1] = 0;
+		// result[i][2] = i % (size/2);
 
 		// Randomize due to caching effects
-		// result[i][0] = rand() % (size/2);
-		// result[i][1] = rand() % (size/2);
-		// result[i][2] = rand() % (size/2);
+		result[i][0] = rand()%(2*size) - size;
+		result[i][1] = rand()%(2*size) - size;
+		result[i][2] = rand()%(2*size) - size;
 	}
 
 	printf("Collisions expected: %d\n", size/2);
