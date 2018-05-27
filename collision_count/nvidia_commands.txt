@@ -1,2 +1,8 @@
 nvprof --unified-memory-profiling off --print-gpu-trace ./prog
 nvprof --unified-memory-profiling off --metrics all ./prog
+
+# Collect timeline
+nvprof --unified-memory-profiling off -o nsteps_t.nvprof ./prog
+
+# Collect events and metrics
+nvprof --analysis-metrics -o  nsteps_m.nvprof ./prog
