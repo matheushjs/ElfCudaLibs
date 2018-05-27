@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #ifndef METHOD
-	#define METHOD 0
+	#define METHOD 1
 #endif
 
 typedef int int3[3];

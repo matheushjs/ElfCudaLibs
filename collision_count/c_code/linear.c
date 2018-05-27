@@ -15,13 +15,13 @@ int count_collisions(int3 *vector, int size, AXISTYPE *space3d){
 
 	// Reset space
 	for(i = 0; i < size; i++){
-		int idx = COORD3D(vector[i], axisSize);
+		long int idx = COORD3D(vector[i], axisSize);
 		space3d[idx] = 0;
 	}
 
 	// Place beads in the space (actually calculate the collisions at the same time)
 	for(i = 0; i < size; i++){
-		int idx = COORD3D(vector[i], axisSize);
+		long int idx = COORD3D(vector[i], axisSize);
 		if(space3d[idx]){
 			collisions += space3d[idx];
 		}
