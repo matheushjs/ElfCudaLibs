@@ -77,6 +77,7 @@ N Steps
 	- Single execution information (After Julio + CUDA 9):
 		- Average kernel time (nvprof): 1.2817ms
 		- Serialized total (10K iterations): 12.8164s
+		- Average kernel time without reduce (fishy): 606ns
 
 Half Steps
 ---
@@ -92,6 +93,16 @@ Half Steps
 	- Single execution information (After Julio + CUDA 9):
 		- Average kernel time (nvprof): 1.6148ms
 		- Serialized total (10K iterations): 16.1466s
+
+- 4143.978000 ms
+	- Optimizations to reduce registers used. From 25 to 21.
+	- Average kernel time (nvprof): 1.6144ms
+
+- 4150.637000 ms
+	- Optimization to reduce instructions.
+	- Registers reduced from 21 to 20.
+	- Average kernel time (nvprof): 1.6164ms
+	- Average kernel time without reduce (fishy): 605ns
 
 Single Steps
 ---
