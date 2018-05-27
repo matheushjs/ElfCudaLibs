@@ -35,8 +35,9 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 	// Count collisions
 	int collisions = 0;
 	int j;
+	int nextId = tid;
 	for(j = 0; j < star; j++){
-		int nextId = (tid + 1 + j + N) % N;
+		nextId = (nextId + 1) % N;
 
 		collisions += (
 				coords[tid].x == coords[nextId].x
@@ -48,7 +49,7 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 	// If N is even, we MUST perform another iteration
 	// Only half the threads perform it, though (this is warp-efficient also).
 	if( !isOdd && tid < (N/2)){
-		int nextId = (tid + 1 + j + N) % N;
+		nextId = (nextId + 1) % N;
 
 		collisions += (
 				coords[tid].x == coords[nextId].x
