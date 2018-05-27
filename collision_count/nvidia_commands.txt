@@ -1,0 +1,2 @@
+nvprof --unified-memory-profiling off --print-gpu-trace ./prog
+nvprof --unified-memory-profiling off --metrics all ./prog
