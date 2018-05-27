@@ -31,6 +31,8 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 	// The number of elements in 'coords' is exactly the number of threads
 	int N = blockDim.x;
 
+	// Place in a register what we will use the most
+	int3 buf = coords[tid];
 
 	// Count collisions
 	int collisions = 0;
@@ -40,9 +42,9 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 		nextId = (nextId + 1) % N;
 
 		collisions += (
-				coords[tid].x == coords[nextId].x
-				&& coords[tid].y == coords[nextId].y
-				&& coords[tid].z == coords[nextId].z
+				buf.x == coords[nextId].x
+				&& buf.y == coords[nextId].y
+				&& buf.z == coords[nextId].z
 			);
 	}
 
@@ -52,9 +54,9 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 		nextId = (nextId + 1) % N;
 
 		collisions += (
-				coords[tid].x == coords[nextId].x
-				&& coords[tid].y == coords[nextId].y
-				&& coords[tid].z == coords[nextId].z
+				buf.x == coords[nextId].x
+				&& buf.y == coords[nextId].y
+				&& buf.z == coords[nextId].z
 			);
 	}
 

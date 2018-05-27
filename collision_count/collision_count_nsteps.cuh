@@ -31,14 +31,16 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power){
 	// Since we allocated N-1 threads, blockDim.x+1 gives us N
 	int N = blockDim.x + 1;
 
+	// Place in a register what we will use the most
+	int3 buf = coords[tid];
 
 	// Count collisions
 	int collisions = 0;
 	for(int j = tid + 1; j < N; j++)
 		collisions += (
-				coords[tid].x == coords[j].x
-				&& coords[tid].y == coords[j].y
-				&& coords[tid].z == coords[j].z
+				buf.x == coords[j].x
+				&& buf.y == coords[j].y
+				&& buf.z == coords[j].z
 			);
 
 
