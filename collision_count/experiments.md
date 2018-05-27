@@ -9,6 +9,48 @@ Experimental Conditions
 
 - Vector of size 1000
 
+```
+ CUDA Device Query (Runtime API) version (CUDART static linking)
+
+Detected 1 CUDA Capable device(s)
+
+Device 0: "GeForce GTX 650"
+  CUDA Driver Version / Runtime Version          9.0 / 8.0
+  CUDA Capability Major/Minor version number:    3.0
+  Total amount of global memory:                 978 MBytes (1026031616 bytes)
+  ( 2) Multiprocessors, (192) CUDA Cores/MP:     384 CUDA Cores
+  GPU Max Clock rate:                            1202 MHz (1.20 GHz)
+  Memory Clock rate:                             2500 Mhz
+  Memory Bus Width:                              128-bit
+  L2 Cache Size:                                 262144 bytes
+  Maximum Texture Dimension Size (x,y,z)         1D=(65536), 2D=(65536, 65536), 3D=(4096, 4096, 4096)
+  Maximum Layered 1D Texture Size, (num) layers  1D=(16384), 2048 layers
+  Maximum Layered 2D Texture Size, (num) layers  2D=(16384, 16384), 2048 layers
+  Total amount of constant memory:               65536 bytes
+  Total amount of shared memory per block:       49152 bytes
+  Total number of registers available per block: 65536
+  Warp size:                                     32
+  Maximum number of threads per multiprocessor:  2048
+  Maximum number of threads per block:           1024
+  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)
+  Max dimension size of a grid size    (x,y,z): (2147483647, 65535, 65535)
+  Maximum memory pitch:                          2147483647 bytes
+  Texture alignment:                             512 bytes
+  Concurrent copy and kernel execution:          Yes with 1 copy engine(s)
+  Run time limit on kernels:                     No
+  Integrated GPU sharing Host Memory:            No
+  Support host page-locked memory mapping:       Yes
+  Alignment requirement for Surfaces:            Yes
+  Device has ECC support:                        Disabled
+  Device supports Unified Addressing (UVA):      Yes
+  Device PCI Domain ID / Bus ID / location ID:   0 / 2 / 0
+  Compute Mode:
+     < Default (multiple host threads can use ::cudaSetDevice() with device simultaneously) >
+
+deviceQuery, CUDA Driver = CUDART, CUDA Driver Version = 9.0, CUDA Runtime Version = 8.0, NumDevs = 1, Device0 = GeForce GTX 650
+Result = PASS
+```
+
 
 N Steps
 ---
@@ -18,6 +60,9 @@ N Steps
 	- **use of shared memory**
 	- **fitting the vector to a power of 2**
 	- **launch & fetch separation**
+	- After Julio's modifications
+		- NVCC from CUDA 8: 10164.731445ms
+		- NVCC from CUDA 9: 8502.455078ms
 
 
 - 6183.920410 ms
@@ -26,11 +71,12 @@ N Steps
 	- fitting the vector to a power of 2
 	- launch & fetch separation
 	- **usage of 8 cuda streams, with asynchronous memcpy and kernel launch**
-	
-- Single execution information:
-	- Average memcpy time: 2.9520us
-	- Average malloc time: 13.027us
-	- Average kernel time: 822.37us
+	- After Julio's modifications
+		- NVCC from CUDA 8: 4518.114000 ms
+		- NVCC from CUDA 9: 3473.578000 ms
+	- Single execution information (After Julio + CUDA 9):
+		- Average kernel time (nvprof): 1.2817ms
+		- Serialized total (10K iterations): 12.8164s
 
 Half Steps
 ---
@@ -40,11 +86,12 @@ Half Steps
 	- fitting the vector to a power of 2
 	- launch & fetch separation
 	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
-
-- Single execution information:
-	- Average memcpy time: 2.9780us
-	- Average malloc time: 12.804us
-	- Average kernel time: 811.25us
+	- After Julio's modifications
+		- NVCC from CUDA 8: 4149.953000 ms
+		- NVCC from CUDA 9: 4149.414000 ms
+	- Single execution information (After Julio + CUDA 9):
+		- Average kernel time (nvprof): 1.6148ms
+		- Serialized total (10K iterations): 16.1466s
 
 Single Steps
 ---
@@ -56,11 +103,13 @@ Single Steps
 	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
 	- usage of multiple blocks
 	- reduce happening in the CPU
+	- After Julio's modifications
+		- NVCC from CUDA 8: 10127.355000 ms
+		- NVCC from CUDA 9: 10112.933000 ms
 
-- Single execution information:
-	- Average memcpy time: 3.2730us
-	- Average malloc time: 12.628us
-	- Average kernel time: 977.95us
+- Single execution information (After Julio + CUDA 9):
+	- Average kernel time (nvprof): 979.36us
+	- Serialized total (10K iterations): 9.79394s
 
 Sequential
 ---
