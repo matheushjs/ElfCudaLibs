@@ -71,13 +71,22 @@ N Steps
 	- fitting the vector to a power of 2
 	- launch & fetch separation
 	- **usage of 8 cuda streams, with asynchronous memcpy and kernel launch**
-	- After Julio's modifications
+	- **After Julio's modifications**
 		- NVCC from CUDA 8: 4518.114000 ms
 		- NVCC from CUDA 9: 3473.578000 ms
 	- Single execution information (After Julio + CUDA 9):
 		- Average kernel time (nvprof): 1.2817ms
 		- Serialized total (10K iterations): 12.8164s
 		- Average kernel time without reduce (fishy): 606ns
+
+- 1972.231000 ms
+	- warp-efficient strides
+	- use of shared memory
+	- fitting the vector to a power of 2
+	- launch & fetch separation
+	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
+	- **register usage optimization**
+
 
 Half Steps
 ---
@@ -87,7 +96,7 @@ Half Steps
 	- fitting the vector to a power of 2
 	- launch & fetch separation
 	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
-	- After Julio's modifications
+	- **After Julio's modifications**
 		- NVCC from CUDA 8: 4149.953000 ms
 		- NVCC from CUDA 9: 4149.414000 ms
 	- Single execution information (After Julio + CUDA 9):
@@ -103,6 +112,9 @@ Half Steps
 	- Registers reduced from 21 to 20.
 	- Average kernel time (nvprof): 1.6164ms
 	- Average kernel time without reduce (fishy): 605ns
+
+- 2585.227000 ms
+	- **Register usage optimization**
 
 Single Steps
 ---
@@ -131,17 +143,23 @@ Sequential
 	- **With O3**
 	- **Volatile trick to prevent loop removal**
 
-- 3816.593000 ms
+- 6711.274000 ms
 	- **With O3 only for the collision count function**
 	- **No more volatile trick**
 	- **Beads positioned along the z-axis, sequentially in the interval [0, size/2], in a circular fashion.**
-	- Average collision count time: 0.3816593us
 
-- 1779.082000 ms
+- 2894.489000 ms
 	- With O3 only for the collision count function
 	- No more volatile trick
 	- **Beads positioned randomly along all the space**
-	- Average collision count time: 0.1779082us
+
+- 5494.238000 ms
+	- With O3 only for the collision count function
+	- No more volatile trick
+	- Beads positioned along the z-axis, sequentially in the interval [0, size/2], in a circular fashion.
+	- **Register optimization**
+
+
 
 Sequential Linear
 ---
