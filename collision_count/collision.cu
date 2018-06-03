@@ -56,7 +56,7 @@ int3 *create_vector(int size){
 	for(i = 0; i < size; i++){
 		result[i].x = 0;
 		result[i].y = 0;
-		result[i].z = i % (size/2);
+		result[i].z = (i % (size/2)) * 4 - size;
 
 		// Randomize due to caching effects
 		// result[i].x = rand()%(2*size) - size;
