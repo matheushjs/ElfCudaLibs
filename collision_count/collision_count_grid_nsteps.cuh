@@ -72,7 +72,10 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 
 	// Export result
 	if(threadIdx.x == 0)
-		atomicAdd(result, sdata[0]);
+		result[blockIdx.x + blockDim.y * gridDim.x] = sdata[0];
+
+	//TODO: implement reduce in another function.
+	//XXX: Must not use more shared memory!! On reduce, re-use the coords vector.
 }
 
 
@@ -111,12 +114,8 @@ count_collisions_launch(int3 *vector, int size){
 	cudaMalloc(&d_vector, sizeof(int3) * size);
 	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, streams[launches%nStreams]);
 
-	// Allocate cuda memory for the number of collisions
-	cudaMalloc(&d_result, sizeof(int));
-	cudaMemsetAsync(d_result, 0, sizeof(int), streams[launches%nStreams]);
-
 	// Prepare to launch kernel
-	int elemInShmem = 1024; // TODO: Fine tune elements in sh mem
+	int elemInShmem = 2048;
 	dim3 dimBlock(1024, 1);
 	dim3 dimGrid(
 			(size + dimBlock.x - 1) / dimBlock.x,
@@ -124,10 +123,15 @@ count_collisions_launch(int3 *vector, int size){
 		);
 	int nShMem = elemInShmem * sizeof(int) * 3;
 
+	// Allocate cuda memory for the number of collisions
+	// This will also be used as a working vector for reducing among blocks
+	cudaMalloc(&d_result, sizeof(int) * dimGrid.x * dimGrid.y);
+	cudaMemsetAsync(d_result, 0, sizeof(int) * dimGrid.x * dimGrid.y, streams[launches%nStreams]);
+
 	if(launches == 1)
 		printf("Grid: (%d, %d); Global mem: %lfMb; Shared mem: %lfKB\n",
 				dimGrid.x, dimGrid.y,
-				(sizeof(int3) * size + sizeof(int)) / (double) 1E6,
+				(sizeof(int3) * size + sizeof(int) * dimGrid.x * dimGrid.y) / (double) 1E6,
 				nShMem / (double) 1E3);
 
 	// We find the power of 2 immediately below 'nThreads'
