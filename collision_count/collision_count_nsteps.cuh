@@ -20,31 +20,44 @@
  *   - The number of threads allocated equals exactly N-1
  *   - N-1 is lower than the maximum number of threads per block
  *
- * Required Shared Memory (in bytes): threadsAllocated * sizeof(integer)
+ * Required Shared Memory (in bytes): nCoords * sizeof(integer) * 3
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int lower2Power){
 	// We get our ID
 	int tid = threadIdx.x;
+	
+	// Fill shared memory with coordinates
+	extern __shared__ int3 scoords[];
+	scoords[tid].x = coords[tid].x;
+	scoords[tid].y = coords[tid].y;
+	scoords[tid].z = coords[tid].z;
+	if(tid == 0){
+		scoords[blockDim.x].x = coords[blockDim.x].x;
+		scoords[blockDim.x].y = coords[blockDim.x].y;
+		scoords[blockDim.x].z = coords[blockDim.x].z;
+	}
+	__syncthreads();
 
 	// The total number of elements in the vector
 	// Since we allocated N-1 threads, blockDim.x+1 gives us N
 	int N = blockDim.x + 1;
 
 	// Place in a register what we will use the most
-	int3 buf = coords[tid];
+	int3 buf = scoords[tid];
 
 	// Count collisions
 	int collisions = 0;
 	for(int j = tid + 1; j < N; j++)
 		collisions += (
-				buf.x == coords[j].x
-				&& buf.y == coords[j].y
-				&& buf.z == coords[j].z
+				buf.x == scoords[j].x
+				&& buf.y == scoords[j].y
+				&& buf.z == scoords[j].z
 			);
+	__syncthreads();
 
 
-	// Fill shared memory
+	// Fill shared memory with collisions
 	extern __shared__ int sdata[];
 	sdata[tid] = collisions;
 	__syncthreads();
@@ -110,7 +123,7 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Prepare to launch kernel
 	int nThreads = size - 1;
-	int nShMem = nThreads * sizeof(int);
+	int nShMem = size * sizeof(int) * 3;
 
 	// We find the power of 2 immediately below 'nThreads'
 	// It is more efficient if its strictly below, and not equal 'nThreads'
