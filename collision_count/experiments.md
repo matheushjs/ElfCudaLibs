@@ -232,3 +232,21 @@ Sequential Linear
 	- slowdown: 4.569078408010231
 	- Randomized vector
 	- **NOTE**: The program effectively accesses very few memory elements; therefore few page frames; therefore little memory is used.
+
+
+
+
+
+Multi-Block Implementations
+===
+
+### Vector of size 50000 (50 * 10^3)
+### Number of iterations: 1
+
+N Steps
+---
+
+- 812.152000 ms
+	- Inefficient implementation
+	- Shared memory only on reduce
+	- atomicAdd for reducing among blocks
