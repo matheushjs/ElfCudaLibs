@@ -27,21 +27,21 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power){
 	// We get our ID
 	int tid = threadIdx.x;
 	
-	// Fill shared memory with coordinates
-	extern __shared__ int3 scoords[];
-	scoords[tid].x = coords[tid].x;
-	scoords[tid].y = coords[tid].y;
-	scoords[tid].z = coords[tid].z;
-	if(tid == 0){
-		scoords[blockDim.x].x = coords[blockDim.x].x;
-		scoords[blockDim.x].y = coords[blockDim.x].y;
-		scoords[blockDim.x].z = coords[blockDim.x].z;
-	}
-	__syncthreads();
-
 	// The total number of elements in the vector
 	// Since we allocated N-1 threads, blockDim.x+1 gives us N
 	int N = blockDim.x + 1;
+
+	// Fill shared memory with coordinates
+	extern __shared__ int3 scoords[];
+	((int *)scoords)[tid]       = ((int *)coords)[tid];
+	((int *)scoords)[N + tid]   = ((int *)coords)[N + tid];
+	((int *)scoords)[2*N + tid] = ((int *)coords)[2*N + tid];
+	if(tid == 0){
+		((int *)scoords)[blockDim.x]       = ((int *)coords)[blockDim.x];
+		((int *)scoords)[N + blockDim.x]   = ((int *)coords)[N + blockDim.x];
+		((int *)scoords)[2*N + blockDim.x] = ((int *)coords)[2*N + blockDim.x];
+	}
+	__syncthreads();
 
 	// Place in a register what we will use the most
 	int3 buf = scoords[tid];
