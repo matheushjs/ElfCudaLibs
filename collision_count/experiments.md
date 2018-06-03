@@ -200,3 +200,4 @@ Sequential Linear
 	- 58.803598 GB memory used
 	- slowdown: 4.569078408010231
 	- Randomized vector
+	- **NOTE**: The program effectively accesses very few memory elements; therefore few page frames; therefore little memory is used.
