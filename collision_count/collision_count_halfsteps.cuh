@@ -17,11 +17,11 @@
  * by using the Hillis-Steele-inspired parallelization we
  *   are proposing.
  *
- * TODO Assumptions:
+ * Assumptions:
  *   - All threads are in a single block
  *   - The number of threads allocated equals exactly N
  *   - N is lower than the maximum number of threads per block
- *   - The amount of shared memory available is:  nThreads * sizeof(int) bytes
+ *   - The amount of shared memory available is:  N * sizeof(int) * 3 bytes
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd, int star){
