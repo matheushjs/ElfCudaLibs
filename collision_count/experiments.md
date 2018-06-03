@@ -142,6 +142,12 @@ Half Steps
 	- **Register usage optimization**
 	- Serialized average time per kernel: 498.88us
 
+- 695.210000 ms
+	- **Even more shared memory usage**
+	- **Increase memory coalescence**
+	- Serialized average time per kernel: 133.18us
+	- Registers per thread: 19
+
 Single Steps
 ---
 
