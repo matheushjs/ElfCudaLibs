@@ -86,7 +86,7 @@ N Steps
 	- launch & fetch separation
 	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
 	- **register usage optimization**
-
+	- Serialized average time per kernel: 673.01us
 
 Half Steps
 ---
@@ -115,6 +115,7 @@ Half Steps
 
 - 2585.227000 ms
 	- **Register usage optimization**
+	- Serialized average time per kernel: 498.88us
 
 Single Steps
 ---
@@ -182,3 +183,20 @@ Sequential Linear
 	- Randomizing vector to prevent cache effects
 	- Using full memory required
 	- **With O3**
+
+- 182.966000 ms
+	- Vector of size 995
+	- 7.361531 GB memory used
+	- Randomized vector
+
+- 274.735000 ms
+	- Vector of size 1.2x995
+	- 12.714340 GB
+	- slowdown: 1.5015631319480123
+	- Randomized vector
+
+- 835.986000 ms
+	- Vector with size 2x995 = 1990
+	- 58.803598 GB memory used
+	- slowdown: 4.569078408010231
+	- Randomized vector
