@@ -17,7 +17,7 @@
  * by using the Hillis-Steele-inspired parallelization we
  *   are proposing.
  *
- * Assumptions:
+ * TODO Assumptions:
  *   - All threads are in a single block
  *   - The number of threads allocated equals exactly N
  *   - N is lower than the maximum number of threads per block
@@ -31,8 +31,15 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 	// The number of elements in 'coords' is exactly the number of threads
 	int N = blockDim.x;
 
+	// Fill shared memory with coordinates
+	extern __shared__ int3 scoords[];
+	((int *)scoords)[tid]       = ((int *)coords)[tid];
+	((int *)scoords)[N + tid]   = ((int *)coords)[N + tid];
+	((int *)scoords)[2*N + tid] = ((int *)coords)[2*N + tid];
+	__syncthreads();
+
 	// Place in a register what we will use the most
-	int3 buf = coords[tid];
+	int3 buf = scoords[tid];
 
 	// Count collisions
 	int collisions = 0;
@@ -42,9 +49,9 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 		nextId = (nextId + 1) % N;
 
 		collisions += (
-				buf.x == coords[nextId].x
-				&& buf.y == coords[nextId].y
-				&& buf.z == coords[nextId].z
+				buf.x == scoords[nextId].x
+				&& buf.y == scoords[nextId].y
+				&& buf.z == scoords[nextId].z
 			);
 	}
 
@@ -54,12 +61,12 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 		nextId = (nextId + 1) % N;
 
 		collisions += (
-				buf.x == coords[nextId].x
-				&& buf.y == coords[nextId].y
-				&& buf.z == coords[nextId].z
+				buf.x == scoords[nextId].x
+				&& buf.y == scoords[nextId].y
+				&& buf.z == scoords[nextId].z
 			);
 	}
-
+	__syncthreads();
 
 	// Fill shared memory
 	extern __shared__ int sdata[];
@@ -127,7 +134,7 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Prepare to launch kernel
 	int nThreads = size;
-	int nShMem = nThreads * sizeof(int);
+	int nShMem = size * sizeof(int) * 3;
 	char isOdd = (size & 0x01);
 
 	// Calculate the number of iterations S* (S star); we call it 'star'
