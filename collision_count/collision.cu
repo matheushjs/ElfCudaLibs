@@ -59,9 +59,9 @@ int3 *create_vector(int size){
 		result[i].z = i % (size/2);
 
 		// Randomize due to caching effects
-		// result[i][0] = rand()%(2*size) - size;
-		// result[i][1] = rand()%(2*size) - size;
-		// result[i][2] = rand()%(2*size) - size;
+		// result[i].x = rand()%(2*size) - size;
+		// result[i].y = rand()%(2*size) - size;
+		// result[i].z = rand()%(2*size) - size;
 	}
 
 	printf("Collisions expected: %d\n", size/2);
