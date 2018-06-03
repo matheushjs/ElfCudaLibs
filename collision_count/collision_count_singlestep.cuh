@@ -149,16 +149,17 @@ void test_count(int3 *vector, int size, int iters){
 
 	int beg = clock();
 
-	int i;
+	int i, res;
 	for(i = 0; i < iters; i++){
 		promises[i] = count_collisions_launch(vector, size);
 	}
 
 	for(i = 0; i < iters; i++){
-		int res = count_collisions_fetch(promises[i]);
+		res = count_collisions_fetch(promises[i]);
 	}
 
 	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
+	printf("Collisions [Single Steps]: %d\n", res);
 }
 
 #endif /* COLLISION_COUNT_SINGLESTEP_H_ */

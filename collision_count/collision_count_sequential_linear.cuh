@@ -40,7 +40,7 @@ int count_collisions(int3 *vector, int size, AXISTYPE *space3d, int axisSize){
 }
 
 void test_count(int3 *vector, int size, int iters){
-	int i;
+	int i, res;
 
 	int beg = clock();
 	
@@ -49,12 +49,13 @@ void test_count(int3 *vector, int size, int iters){
 	AXISTYPE *space3d = (AXISTYPE *) malloc(memSize);
 	printf("Memsize: %lf Gb, Pointer: %p\n", memSize / (double) 1024 / 1024 / 1024, space3d);
 	for(i = 0; i < iters; i++){
-		int res = count_collisions(vector, size, space3d, axisSize);
+		res = count_collisions(vector, size, space3d, axisSize);
 	}
 
 	free(space3d);
 	
 	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
+	printf("Collisions [Linear]: %d\n", res);
 }
 
 

@@ -26,16 +26,18 @@ int count_collisions(int3 *vector, int size){
 }
 
 void test_count(int3 *vector, int size, int iters){
-	int i;
+	int i, res;
 
 	int beg = clock();
 	for(i = 0; i < iters; i++){
-		int res = count_collisions(vector, size);
+		res = count_collisions(vector, size);
 
 		volatile int a;
 		a = res;
 	}
+
 	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
+	printf("Collisions [Sequential]: %d\n", res);
 }
 
 #endif /* COLLISION_COUNT_SEQUENTIAL_H_ */
