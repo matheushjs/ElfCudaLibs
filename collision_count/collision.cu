@@ -17,7 +17,7 @@
 #elif METHOD == 4
 	#include "collision_count_sequential_linear.cuh"
 #elif METHOD == 10
-	#include "collision_count_nsteps_grid.cuh"
+	#include "collision_count_grid_nsteps.cuh"
 #else
 	#error "Fix method mate."
 #endif
