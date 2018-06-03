@@ -88,6 +88,17 @@ N Steps
 	- **register usage optimization**
 	- Serialized average time per kernel: 673.01us
 
+- 659.522000 ms
+	- warp-efficient strides
+	- use of shared memory
+	- fitting the vector to a power of 2
+	- launch & fetch separation
+	- usage of 8 cuda streams, with asynchronous memcpy and kernel launch
+	- register usage optimization
+	- **Even more shared memory usage**
+	- Serialized average time per kernel: 129.03us
+	- Registers per thread: 16
+
 Half Steps
 ---
 
