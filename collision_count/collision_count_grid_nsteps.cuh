@@ -5,6 +5,42 @@
 #include <stdlib.h>
 #include <time.h>
 
+/* Multi-block reduce.
+ * Accepts only vectors that are power of 2.
+ */
+__global__
+void reduce(int *vec, int *result){
+/*
+	extern __shared__ int sdata[];
+
+	int tid = threadIdx.x;
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	sdata[tid] = vec[idx];
+	__syncthreads();
+
+	// Reduce
+	for(int stride = blockDim.x >> 1; stride > 0; stride >>= 1){
+		if(threadIdx.x < stride)
+			sdata[threadIdx.x] += sdata[threadIdx.x+stride];
+
+		__syncthreads();
+	}
+
+	result[blockIdx.x] = sdata[0];
+*/
+
+	int sum = 0;
+	int idx = blockIdx.x * blockDim.x;
+	for(int i = 0; i < blockDim.x; i++){
+		sum += vec[idx + i];
+	}
+	if(threadIdx.x == 0){
+		printf("Block %d, sum = %d\n", blockIdx.x, sum);
+	}
+	result[blockIdx.x] = sum;
+}
+
+
 /*
  * Collision Count procedure implemented in CUDA.
  *
@@ -125,13 +161,15 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Allocate cuda memory for the number of collisions
 	// This will also be used as a working vector for reducing among blocks
-	cudaMalloc(&d_result, sizeof(int) * dimGrid.x * dimGrid.y);
-	cudaMemsetAsync(d_result, 0, sizeof(int) * dimGrid.x * dimGrid.y, streams[launches%nStreams]);
+	int resultSize, t;
+	for(t = dimGrid.x * dimGrid.y, resultSize = 1; resultSize < t; resultSize <<= 1); // Find power of 2 immediately above what is needed
+	cudaMalloc(&d_result, sizeof(int) * resultSize);
+	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, streams[launches%nStreams]); // Reset is needed due to size overestimation
 
 	if(launches == 1)
 		printf("Grid: (%d, %d); Global mem: %lfMb; Shared mem: %lfKB\n",
 				dimGrid.x, dimGrid.y,
-				(sizeof(int3) * size + sizeof(int) * dimGrid.x * dimGrid.y) / (double) 1E6,
+				(sizeof(int3) * size + sizeof(int) * resultSize) / (double) 1E6,
 				nShMem / (double) 1E3);
 
 	// We find the power of 2 immediately below 'nThreads'
@@ -141,8 +179,22 @@ count_collisions_launch(int3 *vector, int size){
 	while(pow2 < dimBlock.x) pow2 <<= 1;
 	pow2 >>= 1;
 
-	// Finally launch kernel
+	// Finally launch kernels
 	count_collisions_cu<<<dimGrid, dimBlock, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, size, pow2);
+
+	while(resultSize > 1024){
+		int nBlocks = resultSize / 1024;
+
+		printf("Reducing from %d to %d\n", resultSize, nBlocks);
+		reduce<<<resultSize/1024, 1024, 1024*sizeof(int), streams[launches%nStreams]>>>(d_result, (int *) d_vector);
+
+		resultSize = nBlocks;
+		int *aux = d_result;
+		d_result = (int *) d_vector;
+		d_vector = (int3 *) aux;
+	}
+
+	reduce<<<1, resultSize, resultSize*sizeof(int), streams[launches%nStreams]>>>(d_result, (int *) d_vector);
 
 	const struct CollisionCountPromise ret = { d_vector, d_result };
 	return ret;
