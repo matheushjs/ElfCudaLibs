@@ -105,6 +105,8 @@ struct CollisionCountPromise {
 	int *d_reduced;
 };
 
+/* Gets the next cuda stream in the circular list of streams.
+ */
 cudaStream_t get_next_stream(){
 	const int nStreams = 8;
 	static cudaStream_t streams[nStreams];
@@ -128,6 +130,22 @@ cudaStream_t get_next_stream(){
 static inline
 int divisionCeil(int dividend, int divisor){
 	return (dividend + divisor - 1) / divisor;
+}
+
+// Returns the first power of 2 that is >= 'base'.
+static inline
+int higherEqualPow2(int base){
+	int result = 1;
+	while(result < base) result <<= 1;
+	return result;
+}
+
+// Returns the last power of 2 that is < 'base'
+static inline
+int lowerStrictPow2(int base){
+	int result = 1;
+	while(result < base) result <<= 1; // Get a result such that result >= base
+	return result >> 1; // Then divide the result by 2 so that result < base
 }
 
 /* Given a vector with 3D coordinates of points in the space,
@@ -159,25 +177,23 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Allocate cuda memory for the number of collisions
 	// This will also be used as a working vector for reducing among blocks
-	int resultSize, t;
-	for(t = dimGrid.x * dimGrid.y, resultSize = 1; resultSize < t; resultSize <<= 1); // Find power of 2 immediately above what is needed
+	int resultSize = higherEqualPow2(dimGrid.x * dimGrid.y);
 	cudaMalloc(&d_result, sizeof(int) * resultSize);
 	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
 
 	// We find the power of 2 immediately below 'nThreads'
 	// We calculate this here to avoid calculating it into the GPU
-	int pow2 = 1;
-	while(pow2 < dimBlock.x) pow2 <<= 1;
-	pow2 >>= 1;
+	int pow2 = lowerStrictPow2(dimBlock.x);
 
 	// Finally launch kernels
 	count_collisions_cu<<<dimGrid, dimBlock, nShMem, stream>>>(d_vector, d_result, size, pow2);
-	cudaDeviceSynchronize();
-
+	
+/*
 	int res[resultSize];
 	cudaMemcpy(res, d_result, sizeof(int) * resultSize, cudaMemcpyDeviceToHost);
 	for(int i = 0; i < resultSize; i++) printf("%d ", res[i]);
 	printf("\n\n");
+*/
 
 	// Reduce the result vector
 	int workSize = resultSize;
@@ -187,17 +203,17 @@ count_collisions_launch(int3 *vector, int size){
 	while(true){
 		if(nBlocks == 0){
 			reduce<<<1, workSize, sizeof(int) * workSize>>>(d_toReduce, d_reduced);
-			cudaDeviceSynchronize();
 			break;
 		}
 
 		reduce<<<nBlocks, 1024, sizeof(int) * 1024>>>(d_toReduce, d_reduced);
-		cudaDeviceSynchronize();
 
+/*
 		int res[nBlocks];
 		cudaMemcpy(res, d_reduced, sizeof(int) * nBlocks, cudaMemcpyDeviceToHost);
 		for(int i = 0; i < nBlocks; i++) printf("%d ", res[i]);
 		printf("\n\n");
+*/
 
 		// For the next run, vectors should be swapped
 		int *aux = d_reduced;
