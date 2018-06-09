@@ -108,6 +108,25 @@ struct CollisionCountPromise {
 	int *d_result;
 };
 
+
+cudaStream_t get_next_stream(){
+	const int nStreams = 8;
+	static cudaStream_t streams[nStreams];
+	static unsigned int launches = 0;
+
+	// Allocate cuda streams in the first execution
+	static int streamInit = 0;
+	if(streamInit == 0){
+		streamInit = 1;
+		for(int i = 0; i < nStreams; i++){
+			cudaStreamCreate(&streams[i]);
+		}
+	}
+
+	launches++;
+	return streams[launches%nStreams];
+}
+
 /* Given a vector with 3D coordinates of points in the space,
  *   this function calculates the number of collisions among
  *   points, using CUDA-enable GPU.
@@ -118,25 +137,13 @@ struct CollisionCountPromise {
  */
 struct CollisionCountPromise
 count_collisions_launch(int3 *vector, int size){
-	// Allocate cuda streams in the first execution
-	const int nStreams = 8;
-	static cudaStream_t streams[nStreams];
-	static int streamInit = 0;
-	if(streamInit == 0){
-		streamInit = 1;
-		for(int i = 0; i < nStreams; i++){
-			cudaStreamCreate(&streams[i]);
-		}
-	}
-	static unsigned int launches = 0;
-	launches++;
-
 	int3 *d_vector;
 	int *d_result;
+	cudaStream_t stream = get_next_stream();
 
 	// Allocate cuda vector for the 3D coordinates
 	cudaMalloc(&d_vector, sizeof(int3) * size);
-	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, streams[launches%nStreams]);
+	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, stream);
 
 	// Prepare to launch kernel
 	int elemInShmem = 2048;
@@ -152,13 +159,7 @@ count_collisions_launch(int3 *vector, int size){
 	int resultSize, t;
 	for(t = dimGrid.x * dimGrid.y, resultSize = 1; resultSize < t; resultSize <<= 1); // Find power of 2 immediately above what is needed
 	cudaMalloc(&d_result, sizeof(int) * resultSize);
-	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, streams[launches%nStreams]); // Reset is needed due to size overestimation
-
-	if(launches == 1)
-		printf("Grid: (%d, %d); Global mem: %lfMb; Shared mem: %lfKB\n",
-				dimGrid.x, dimGrid.y,
-				(sizeof(int3) * size + sizeof(int) * resultSize) / (double) 1E6,
-				nShMem / (double) 1E3);
+	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
 
 	// We find the power of 2 immediately below 'nThreads'
 	// It is more efficient if its strictly below, and not equal 'nThreads'
@@ -168,13 +169,13 @@ count_collisions_launch(int3 *vector, int size){
 	pow2 >>= 1;
 
 	// Finally launch kernels
-	count_collisions_cu<<<dimGrid, dimBlock, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, size, pow2);
+	count_collisions_cu<<<dimGrid, dimBlock, nShMem, stream>>>(d_vector, d_result, size, pow2);
 
 	while(resultSize > 1024){
 		int nBlocks = resultSize / 1024;
 
 		printf("Reducing from %d to %d\n", resultSize, nBlocks);
-		reduce<<<resultSize/1024, 1024, 1024*sizeof(int), streams[launches%nStreams]>>>(d_result, (int *) d_vector);
+		reduce<<<resultSize/1024, 1024, 1024*sizeof(int), stream>>>(d_result, (int *) d_vector);
 
 		resultSize = nBlocks;
 		int *aux = d_result;
@@ -182,7 +183,7 @@ count_collisions_launch(int3 *vector, int size){
 		d_vector = (int3 *) aux;
 	}
 
-	reduce<<<1, resultSize, resultSize*sizeof(int), streams[launches%nStreams]>>>(d_result, (int *) d_vector);
+	reduce<<<1, resultSize, resultSize*sizeof(int), stream>>>(d_result, (int *) d_vector);
 
 	const struct CollisionCountPromise ret = { d_vector, d_result };
 	return ret;
@@ -229,7 +230,7 @@ void test_reduce(){
 	int *d_result;
 	cudaMalloc(&d_result, sizeof(int) * SIZE);
 	cudaMemset(d_result, 0, sizeof(int) * SIZE);
-	
+
 	/* We reduce the vector in the GPU */
 	int workSize, nBlocks;
 	workSize = SIZE;
