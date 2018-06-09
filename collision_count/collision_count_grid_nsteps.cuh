@@ -128,6 +128,13 @@ cudaStream_t get_next_stream(){
 	return streams[launches%nStreams];
 }
 
+/* Divides 'dividend' by 'divisor', rounding up.
+ */
+static inline
+int divisionCeil(int dividend, int divisor){
+	return (dividend + divisor - 1) / divisor;
+}
+
 /* Given a vector with 3D coordinates of points in the space,
  *   this function calculates the number of collisions among
  *   points, using CUDA-enable GPU.
@@ -146,12 +153,12 @@ count_collisions_launch(int3 *vector, int size){
 	cudaMalloc(&d_vector, sizeof(int3) * size);
 	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, stream);
 
-	// Prepare to launch kernel
-	int elemInShmem = 2048;
+	// Prepare kernel launch parameters
+	const int elemInShmem = 2048;
 	dim3 dimBlock(1024, 1);
 	dim3 dimGrid(
-			(size + dimBlock.x - 1) / dimBlock.x,
-			(size + elemInShmem - 1) / elemInShmem
+			divisionCeil(size, dimBlock.x),
+			divisionCeil(size, elemInShmem)
 		);
 	int nShMem = elemInShmem * sizeof(int) * 3;
 
@@ -163,7 +170,6 @@ count_collisions_launch(int3 *vector, int size){
 	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
 
 	// We find the power of 2 immediately below 'nThreads'
-	// It is more efficient if its strictly below, and not equal 'nThreads'
 	// We calculate this here to avoid calculating it into the GPU
 	int pow2 = 1;
 	while(pow2 < dimBlock.x) pow2 <<= 1;
@@ -172,21 +178,19 @@ count_collisions_launch(int3 *vector, int size){
 	// Finally launch kernels
 	count_collisions_cu<<<dimGrid, dimBlock, nShMem, stream>>>(d_vector, d_result, size, pow2);
 
-/*
-	while(resultSize > 1024){
-		int nBlocks = resultSize / 1024;
+	int workSize = resultSize;
+	int nBlocks = resultSize/1024;
+	int *d_toReduce = d_result;
+	int *d_reduced  = (int *) d_vector;
+	while(true){
+		if(nBlocks == 0){
+			reduce<<<1, workSize, sizeof(int) * workSize>>>(d_toReduce, d_reduced);
+			break;
+		}
 
-		printf("Reducing from %d to %d\n", resultSize, nBlocks);
-		reduce<<<resultSize/1024, 1024, 1024*sizeof(int), stream>>>(d_result, (int *) d_vector);
-
-		resultSize = nBlocks;
-		int *aux = d_result;
-		d_result = (int *) d_vector;
-		d_vector = (int3 *) aux;
+		reduce<<<nBlocks, 1024, sizeof(int) * 1024>>>(d_toReduce, d_reduced);
+		break;
 	}
-
-	reduce<<<1, resultSize, resultSize*sizeof(int), stream>>>(d_result, (int *) d_vector);
-*/
 
 	const struct CollisionCountPromise ret = { d_vector, d_result };
 	return ret;
@@ -204,9 +208,9 @@ int count_collisions_fetch(struct CollisionCountPromise promise){
 	*/
 
 	int i;
-	const int n = 128;
+	const int n = 1;
 	int result[n];
-	cudaMemcpy(&result, promise.d_result, sizeof(int) * n, cudaMemcpyDeviceToHost);
+	cudaMemcpy(&result, promise.d_vector, sizeof(int) * n, cudaMemcpyDeviceToHost);
 
 	for(i = 0; i < n; i++){
 		printf("%d ", result[i]);
@@ -219,7 +223,6 @@ int count_collisions_fetch(struct CollisionCountPromise promise){
 	return result[0];
 }
 
-#include <math.h>
 void test_reduce(){
 	/* We create a vector of size 2**X  */
 	const int SIZE = 4096;
