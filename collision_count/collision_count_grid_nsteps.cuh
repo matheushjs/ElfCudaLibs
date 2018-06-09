@@ -98,17 +98,12 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	if(threadIdx.x == 0){
 		result[blockIdx.x + blockIdx.y * gridDim.x] = sdata[0];
 	}
-
-	//TODO: implement reduce in another function.
-	//XXX: Must not use more shared memory!! On reduce, re-use the coords vector.
 }
 
-
 struct CollisionCountPromise {
-	int3 *d_vector;
-	int *d_result;
+	int *d_toReduce;
+	int *d_reduced;
 };
-
 
 cudaStream_t get_next_stream(){
 	const int nStreams = 8;
@@ -154,13 +149,13 @@ count_collisions_launch(int3 *vector, int size){
 	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, stream);
 
 	// Prepare kernel launch parameters
-	const int elemInShmem = 2048;
-	dim3 dimBlock(1024, 1);
+	const int elemInShmem = 2048; // 2048 allows 2 blocks to use the whole shared memory available.
+	dim3 dimBlock(1024, 1); // We allocate maximum number of threads per block.
 	dim3 dimGrid(
-			divisionCeil(size, dimBlock.x),
-			divisionCeil(size, elemInShmem)
+			divisionCeil(size, dimBlock.x), // Width depends on size / threadsPerBlock
+			divisionCeil(size, elemInShmem) // Height depends on size / elementsInShmemPerBlock
 		);
-	int nShMem = elemInShmem * sizeof(int) * 3;
+	int nShMem = elemInShmem * sizeof(int3); // Shared memory required
 
 	// Allocate cuda memory for the number of collisions
 	// This will also be used as a working vector for reducing among blocks
@@ -177,7 +172,14 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Finally launch kernels
 	count_collisions_cu<<<dimGrid, dimBlock, nShMem, stream>>>(d_vector, d_result, size, pow2);
+	cudaDeviceSynchronize();
 
+	int res[resultSize];
+	cudaMemcpy(res, d_result, sizeof(int) * resultSize, cudaMemcpyDeviceToHost);
+	for(int i = 0; i < resultSize; i++) printf("%d ", res[i]);
+	printf("\n\n");
+
+	// Reduce the result vector
 	int workSize = resultSize;
 	int nBlocks = resultSize/1024;
 	int *d_toReduce = d_result;
@@ -185,14 +187,29 @@ count_collisions_launch(int3 *vector, int size){
 	while(true){
 		if(nBlocks == 0){
 			reduce<<<1, workSize, sizeof(int) * workSize>>>(d_toReduce, d_reduced);
+			cudaDeviceSynchronize();
 			break;
 		}
 
 		reduce<<<nBlocks, 1024, sizeof(int) * 1024>>>(d_toReduce, d_reduced);
-		break;
+		cudaDeviceSynchronize();
+
+		int res[nBlocks];
+		cudaMemcpy(res, d_reduced, sizeof(int) * nBlocks, cudaMemcpyDeviceToHost);
+		for(int i = 0; i < nBlocks; i++) printf("%d ", res[i]);
+		printf("\n\n");
+
+		// For the next run, vectors should be swapped
+		int *aux = d_reduced;
+		d_reduced = d_toReduce;
+		d_toReduce = aux;
+
+		// For the next run, the workSize and nBlocks are lower
+		workSize = nBlocks;
+		nBlocks = workSize/1024;
 	}
 
-	const struct CollisionCountPromise ret = { d_vector, d_result };
+	const struct CollisionCountPromise ret = { d_toReduce, d_reduced };
 	return ret;
 }
 
@@ -210,15 +227,15 @@ int count_collisions_fetch(struct CollisionCountPromise promise){
 	int i;
 	const int n = 1;
 	int result[n];
-	cudaMemcpy(&result, promise.d_vector, sizeof(int) * n, cudaMemcpyDeviceToHost);
+	cudaMemcpy(&result, promise.d_reduced, sizeof(int) * n, cudaMemcpyDeviceToHost);
 
 	for(i = 0; i < n; i++){
 		printf("%d ", result[i]);
 	}
 	printf("\n");
 
-	cudaFree(&promise.d_result);
-	cudaFree(&promise.d_vector);
+	cudaFree(promise.d_toReduce);
+	cudaFree(promise.d_reduced);
 
 	return result[0];
 }
