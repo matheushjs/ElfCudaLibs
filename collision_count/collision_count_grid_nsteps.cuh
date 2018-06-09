@@ -38,13 +38,11 @@ void reduce(int *vec, int *result){
  *     collisions += (bead[i] == bead[j])
  * by performing just the outer 'for' in parallel.
  *
- * The outer 'for' has N-1 iterations, hence we allocate N-1 threads.
- * TODO Assumptions:
- *   - All threads are in a single block
- *   - The number of threads allocated equals exactly N-1
- *   - N-1 is lower than the maximum number of threads per block
- *
- * Required Shared Memory (in bytes): nCoords * sizeof(integer) * 3
+ * Assumptions:
+ *   - The grid of blocks has dimension HxW (height x width)
+ *   - Horizontally, 'coords' is split  among each each block (not necessarily evenly), meaning each
+ *       block is in charge of some number N of elements.
+ *   - The amount of shared memory required is:  N * sizeof(int3)
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power){
@@ -52,7 +50,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	int horizontalId = blockIdx.x * blockDim.x + threadIdx.x; // Our horizontal ID
 	int dataBlock = (nCoords + gridDim.y - 1) / gridDim.y;    // Data size that each block processes,
 	                                                          //   rounded up
-	int blockBaseIdx = blockIdx.y * dataBlock;          // Index in 'coords' where the datablock begins
+	int blockBaseIdx = blockIdx.y * dataBlock;          // Index in 'coords' where our datablock begins
 	int beg = max(blockBaseIdx, horizontalId + 1);      // Index in 'coords' where we start processing
 	int endx = min(blockBaseIdx + dataBlock, nCoords);  // Index in 'coords' where we stop processing
 
