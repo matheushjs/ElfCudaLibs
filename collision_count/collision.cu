@@ -80,7 +80,7 @@ void t2(){
 	// int vecSize = 1000;
 	// int iters = 10000;
 
-	int vecSize = 100000;
+	int vecSize = 16384;
 	int iters = 1;
 
 	int3 *vec = create_vector(vecSize);

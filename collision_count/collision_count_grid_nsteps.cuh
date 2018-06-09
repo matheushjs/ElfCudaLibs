@@ -95,8 +95,9 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	}
 
 	// Export result
-	if(threadIdx.x == 0)
-		result[blockIdx.x + blockDim.y * gridDim.x] = sdata[0];
+	if(threadIdx.x == 0){
+		result[blockIdx.x + blockIdx.y * gridDim.x] = sdata[0];
+	}
 
 	//TODO: implement reduce in another function.
 	//XXX: Must not use more shared memory!! On reduce, re-use the coords vector.
@@ -171,6 +172,7 @@ count_collisions_launch(int3 *vector, int size){
 	// Finally launch kernels
 	count_collisions_cu<<<dimGrid, dimBlock, nShMem, stream>>>(d_vector, d_result, size, pow2);
 
+/*
 	while(resultSize > 1024){
 		int nBlocks = resultSize / 1024;
 
@@ -184,6 +186,7 @@ count_collisions_launch(int3 *vector, int size){
 	}
 
 	reduce<<<1, resultSize, resultSize*sizeof(int), stream>>>(d_result, (int *) d_vector);
+*/
 
 	const struct CollisionCountPromise ret = { d_vector, d_result };
 	return ret;
@@ -195,13 +198,25 @@ count_collisions_launch(int3 *vector, int size){
  *   it shouldn't be used anywhere after a call to this function.
  */
 int count_collisions_fetch(struct CollisionCountPromise promise){
+	/*
 	int result;
 	cudaMemcpy(&result, promise.d_result, sizeof(int), cudaMemcpyDeviceToHost);
+	*/
+
+	int i;
+	const int n = 128;
+	int result[n];
+	cudaMemcpy(&result, promise.d_result, sizeof(int) * n, cudaMemcpyDeviceToHost);
+
+	for(i = 0; i < n; i++){
+		printf("%d ", result[i]);
+	}
+	printf("\n");
 
 	cudaFree(&promise.d_result);
 	cudaFree(&promise.d_vector);
 
-	return result;
+	return result[0];
 }
 
 #include <math.h>
@@ -273,9 +288,6 @@ void test_reduce(){
 }
 
 void test_count(int3 *vector, int size, int iters){
-	test_reduce();
-	return;
-
 	struct CollisionCountPromise *promises;
 	promises = (struct CollisionCountPromise *) malloc(sizeof(struct CollisionCountPromise) * iters);
 
