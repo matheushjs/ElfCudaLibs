@@ -10,7 +10,6 @@
  */
 __global__
 void reduce(int *vec, int *result){
-/*
 	extern __shared__ int sdata[];
 
 	int tid = threadIdx.x;
@@ -27,17 +26,6 @@ void reduce(int *vec, int *result){
 	}
 
 	result[blockIdx.x] = sdata[0];
-*/
-
-	int sum = 0;
-	int idx = blockIdx.x * blockDim.x;
-	for(int i = 0; i < blockDim.x; i++){
-		sum += vec[idx + i];
-	}
-	if(threadIdx.x == 0){
-		printf("Block %d, sum = %d\n", blockIdx.x, sum);
-	}
-	result[blockIdx.x] = sum;
 }
 
 
@@ -215,7 +203,78 @@ int count_collisions_fetch(struct CollisionCountPromise promise){
 	return result;
 }
 
+#include <math.h>
+void test_reduce(){
+	/* We create a vector of size 2**X  */
+	const int SIZE = 4096;
+	int *vector = (int *) malloc(sizeof(int) * SIZE);
+	int i;
+
+	/* We fill it with 1..size */
+	for(i = 0; i < SIZE; i++){
+		vector[i] = i;
+	}
+
+	/* We reduce it sequentially */
+	int gold = 0;
+	for(i = 0; i < SIZE; i++)
+		gold += vector[i];
+
+	/* We send the vector to the cuda memory */
+	int *d_vector;
+	cudaMalloc(&d_vector, sizeof(int) * SIZE);
+	cudaMemcpy(d_vector, vector, sizeof(int) * SIZE, cudaMemcpyHostToDevice);
+
+	/* We create a vector for holding the result */
+	int *d_result;
+	cudaMalloc(&d_result, sizeof(int) * SIZE);
+	cudaMemset(d_result, 0, sizeof(int) * SIZE);
+	
+	/* We reduce the vector in the GPU */
+	int workSize, nBlocks;
+	workSize = SIZE;
+	nBlocks = workSize/1024;
+	while(true){
+		reduce<<<nBlocks, 1024, sizeof(int) * 1024>>>(d_vector, d_result);
+
+		workSize = nBlocks;
+		nBlocks = workSize/1024;
+
+		int *aux = d_vector;
+		d_vector = d_result;
+		d_result = aux;
+
+		if(nBlocks == 0){
+			reduce<<<1, workSize, sizeof(int) * workSize>>>(d_vector, d_result);
+			break;
+		}
+	}
+
+	/* We get the result vector */
+	cudaMemcpy(vector, d_result, sizeof(int) * SIZE, cudaMemcpyDeviceToHost);
+
+	/* We print it */
+	for(i = 0; i < SIZE; i++){
+		printf("%5d ", vector[i]);
+	}
+
+	/* We check whether it was successful */
+	if(gold != vector[0]){
+		printf("Result is wrong, %d != %d!\n", gold, vector[0]);
+	} else {
+		printf("Result is correct! %d sum.\n", gold);
+	}
+
+	/* We free resources */
+	cudaFree(d_result);
+	cudaFree(d_vector);
+	free(vector);
+}
+
 void test_count(int3 *vector, int size, int iters){
+	test_reduce();
+	return;
+
 	struct CollisionCountPromise *promises;
 	promises = (struct CollisionCountPromise *) malloc(sizeof(struct CollisionCountPromise) * iters);
 
