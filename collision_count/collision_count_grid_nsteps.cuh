@@ -48,23 +48,23 @@ void reduce(int *vec, int *result){
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power){
-	// We get our horizontal ID
-	int tid = blockIdx.x * blockDim.x + threadIdx.x;
+	/* Get the most important parameters for deciding what to compute */
+	int horizontalId = blockIdx.x * blockDim.x + threadIdx.x; // Our horizontal ID
+	int dataBlock = (nCoords + gridDim.y - 1) / gridDim.y;    // Data size that each block processes,
+	                                                          //   rounded up
+	int beg = max(blockIdx.y * dataBlock, horizontalId + 1);  // Index in 'coords' where the dataBlock
+	                                                          //   begins (rounded up)
+	int endx = min((blockIdx.y + 1) * dataBlock, nCoords);    // Index in 'coords' where the dataBlock ends, x stands
+	                                                          //   for 'excluded'
+
+	// We get rid early of blocks that are idle
+	if(blockIdx.y * dataBlock >= endx) return;
 
 	// We read our element in a register
 	int3 buf;
-	if(tid < nCoords)
-		buf = coords[tid];
-
-	// In the coords vector, how many elements are to be processed (rounds up)?
-	int dataBlock = (nCoords + gridDim.y - 1) / gridDim.y;
+	if(horizontalId < nCoords)
+		buf = coords[horizontalId];
 	
-	// And what are the begin/end indexes?
-	int beg = blockIdx.y * dataBlock;
-	int endx = beg + dataBlock; // x stands for 'excluded'
-	if((tid + 1) > beg) beg = tid + 1;
-	if(endx > nCoords) endx = nCoords;
-
 	// Count collisions
 	int collisions = 0;
 	for(int j = beg; j < endx; j++){
