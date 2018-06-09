@@ -52,10 +52,9 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	int horizontalId = blockIdx.x * blockDim.x + threadIdx.x; // Our horizontal ID
 	int dataBlock = (nCoords + gridDim.y - 1) / gridDim.y;    // Data size that each block processes,
 	                                                          //   rounded up
-	int beg = max(blockIdx.y * dataBlock, horizontalId + 1);  // Index in 'coords' where the dataBlock
-	                                                          //   begins (rounded up)
-	int endx = min((blockIdx.y + 1) * dataBlock, nCoords);    // Index in 'coords' where the dataBlock ends, x stands
-	                                                          //   for 'excluded'
+	int blockBaseIdx = blockIdx.y * dataBlock;          // Index in 'coords' where the datablock begins
+	int beg = max(blockBaseIdx, horizontalId + 1);      // Index in 'coords' where we start processing
+	int endx = min(blockBaseIdx + dataBlock, nCoords);  // Index in 'coords' where we stop processing
 
 	// We get rid early of blocks that are idle
 	if(blockIdx.y * dataBlock >= endx) return;
@@ -65,15 +64,23 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	if(horizontalId < nCoords)
 		buf = coords[horizontalId];
 	
+	// Fill shared memory with elements
+	extern __shared__ int3 sCoords[];
+	for(int j = threadIdx.x; j < dataBlock; j += blockDim.x){
+		sCoords[j] = coords[j + blockBaseIdx];
+	}
+	__syncthreads();
+
 	// Count collisions
 	int collisions = 0;
 	for(int j = beg; j < endx; j++){
 		collisions += (
-				buf.x == coords[j].x
-				&& buf.y == coords[j].y
-				&& buf.z == coords[j].z
+				buf.x == sCoords[j - blockBaseIdx].x
+				&& buf.y == sCoords[j - blockBaseIdx].y
+				&& buf.z == sCoords[j - blockBaseIdx].z
 			);
 	}
+	__syncthreads();
 
 	// Fill shared memory with collisions
 	extern __shared__ int sdata[];
