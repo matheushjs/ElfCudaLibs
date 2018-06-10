@@ -57,6 +57,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int star){
 	extern __shared__ int3 sCoords[];
 	sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
 	sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x + 1024) % nCoords ];
+	__syncthreads();
 	
 	// Move our base index
 	baseIdx = baseIdx + 2048; // We could use modulus here, but doesn't seem necessary
@@ -64,36 +65,6 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int star){
 	int iterations = 0;
 	int collisions = 0;
 	int offset = 1;
-
-	// Execute the first 1024 iterations
-	while(iterations < 1024 && iterations < star){
-		collisions += (
-				buf.x == sCoords[threadIdx.x + offset].x
-				&& buf.y == sCoords[threadIdx.x + offset].y
-				&& buf.z == sCoords[threadIdx.x + offset].z
-			);
-		
-		iterations++;
-		offset++;
-	}
-
-	if(offset == 1025){
-		// Unfortunately we need sync here.
-		__syncthreads();
-
-		// Rewrite first block with second block
-		sCoords[threadIdx.x] = sCoords[threadIdx.x + 1024];
-		
-		// Read third block
-		sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x) % nCoords ];
-		__syncthreads();
-		
-		// Move base index
-		baseIdx += 1024;
-
-		// Reset offset
-		offset = 1;
-	}
 
 	while(iterations < star){
 		// Execute one iteration
