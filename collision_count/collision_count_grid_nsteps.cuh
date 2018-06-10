@@ -47,58 +47,64 @@ void reduce(int *vec, int *result){
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power){
 	/* Get the most important parameters for deciding what to compute */
+	int threadBaseIdx = blockIdx.x * blockDim.x;              // Id of the first thread in our block
 	int horizontalId = blockIdx.x * blockDim.x + threadIdx.x; // Our horizontal ID
-	int dataBlock = (nCoords + gridDim.y - 1) / gridDim.y;    // Data size that each block processes,
-	                                                          //   rounded up
-	int blockBaseIdx = blockIdx.y * dataBlock;          // Index in 'coords' where our datablock begins
-	int beg = max(blockBaseIdx, horizontalId + 1);      // Index in 'coords' where we start processing
-	int endx = min(blockBaseIdx + dataBlock, nCoords);  // Index in 'coords' where we stop processing
+	int blockBaseIdx = blockIdx.y * 2048; // Index in 'coords' where our datablock begins
+	int blockBaseEndx = min(blockBaseIdx + 2048, nCoords);   // Index in 'coords' where our datablock ends (exlusive)
 
-	// We get rid early of blocks that are idle
-	if(blockIdx.y * dataBlock >= endx) return;
+	// Get rid of unused blocks
+	if(threadBaseIdx >= blockBaseEndx) return;
 
 	// We read our element in a register
-	int3 buf;
-	if(horizontalId < nCoords)
-		buf = coords[horizontalId];
+	int3 buf = coords[horizontalId % nCoords];
 	
-	// Fill shared memory with elements
+	// Read the 2 blocks into shared memory (surplus threads read anything)
 	extern __shared__ int3 sCoords[];
-	for(int j = threadIdx.x; j < dataBlock; j += blockDim.x){
-		sCoords[j] = coords[j + blockBaseIdx];
+	sCoords[threadIdx.x] = coords[(blockBaseIdx + threadIdx.x) % nCoords];
+	sCoords[threadIdx.x + 1024] = coords[(blockBaseIdx + threadIdx.x + 1024) % nCoords];
+	__syncthreads();
+
+	/*
+	if(horizontalId == 0){
+		for(int i = 0; i < 2048; i++){
+			printf("%d ", sCoords[i].z);
+		}
 	}
 	__syncthreads();
+	*/
 
 	// Count collisions
 	int collisions = 0;
-	for(int j = beg; j < endx; j++){
+	// Get index in 'coords' and 'sCoords' of the element we are processing
+	int offset = blockBaseIdx >= threadBaseIdx ? 1 : 1025; // With 1024 blockDim.x and 2048 elements
+	                                                       //  in shared memory, there are only these
+	                                                       //  2 options
+	int elementInScoords = threadIdx.x + offset;
+	int elementInCoords  = blockBaseIdx + elementInScoords;
+	while(elementInCoords < blockBaseEndx){
 		collisions += (
-				buf.x == sCoords[j - blockBaseIdx].x
-				&& buf.y == sCoords[j - blockBaseIdx].y
-				&& buf.z == sCoords[j - blockBaseIdx].z
-			);
+			buf.x == sCoords[elementInScoords].x
+			&& buf.y == sCoords[elementInScoords].y
+			&& buf.z == sCoords[elementInScoords].z
+		);
+		elementInScoords++;
+		elementInCoords++;
 	}
 	__syncthreads();
 
-	// Fill shared memory with collisions
+	// Fill shared memory with collisions (surplus threads are ignored)
 	extern __shared__ int sdata[];
-	sdata[threadIdx.x] = collisions;
+	sdata[threadIdx.x] = collisions * (horizontalId < nCoords);
 	__syncthreads();
 
-	// Apply one reduce iteration that forces the working vector
-	//   size to be a power of 2.
-	if(threadIdx.x < lower2Power && threadIdx.x+lower2Power < blockDim.x)
-		sdata[threadIdx.x] += sdata[threadIdx.x+lower2Power];
-	__syncthreads();
-
-	// Reduce
-	for(int stride = lower2Power >> 1; stride > 0; stride >>= 1){
+	// Reduce 1024 elements
+	for(int stride = 512; stride > 0; stride >>= 1){
 		if(threadIdx.x < stride)
 			sdata[threadIdx.x] += sdata[threadIdx.x+stride];
 
 		__syncthreads();
 	}
-
+	
 	// Export result
 	if(threadIdx.x == 0){
 		result[blockIdx.x + blockIdx.y * gridDim.x] = sdata[0];
