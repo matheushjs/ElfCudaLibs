@@ -18,6 +18,8 @@
 	#include "collision_count_sequential_linear.cuh"
 #elif METHOD == 10
 	#include "collision_count_grid_nsteps.cuh"
+#elif METHOD == 11
+	#include "collision_count_grid_halfsteps.cuh"
 #else
 	#error "Fix method mate."
 #endif
@@ -80,7 +82,7 @@ void t2(){
 	// int vecSize = 1000;
 	// int iters = 10000;
 
-	int vecSize = 32*1024;
+	int vecSize = 20 * 16 * 1024;
 	int iters = 1;
 
 	int3 *vec = create_vector(vecSize);
