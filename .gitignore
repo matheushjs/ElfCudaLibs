@@ -3,3 +3,7 @@ prog
 *.swp
 Debug/
 .metadata/
+*.o
+*project
+*nvprof
+/deviceQuery/
