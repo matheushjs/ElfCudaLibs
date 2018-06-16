@@ -240,13 +240,21 @@ Sequential Linear
 Multi-Block Implementations
 ===
 
-### Vector of size 50000 (50 * 10^3)
+### Vector of size 32 * 16 * 1024
 ### Number of iterations: 1
 
 N Steps
 ---
 
-- 812.152000 ms
-	- Inefficient implementation
-	- Shared memory only on reduce
-	- atomicAdd for reducing among blocks
+- 6154.776000 ms
+
+Single-Row N Steps
+---
+
+- 9876.082000 ms
+
+
+Single-Row Half Steps
+---
+
+- 7916.144000 ms
