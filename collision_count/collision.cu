@@ -75,6 +75,16 @@ int3 *create_vector(int size){
 	return result;
 }
 
+int3 *sequential_vector(int size){
+	int3 *result = (int3 *) malloc(sizeof(int3) * size);
+
+	for(int i = 0; i < size; i++){
+		result[i] = (int3) {i, i, i};
+	}
+
+	return result;
+}
+
 void t1(){
 	int dummySize = sizeof(dummy) / sizeof(int3);
 	test_count(dummy, dummySize, 1);
@@ -94,7 +104,58 @@ void t2(){
 }
 
 void t3(){
+	int size = 16 * 1024;
 
+	// First we create a vector where neighbors have collisions
+	int3 *vec = sequential_vector(size);
+	for(int i = 0; i < size; i += 2){
+		vec[i] = vec[i+1];
+	}
+	printf("\nExpected: %d\n", size / 2);
+	test_count(vec, size, 1);
+	free(vec);
+
+	// Then we create a vector where all elements are colliding
+	vec = sequential_vector(size);
+	for(int i = 0; i < size; i++){
+		vec[i] = vec[0];
+	}
+	printf("\nExpected: %d\n", size * (size - 1) / 2);
+	test_count(vec, size, 1);
+	free(vec);
+
+	// Finally, no collisions at all
+	vec = sequential_vector(size);
+	printf("\nExpected: %d\n", 0);
+	test_count(vec, size, 1);
+	free(vec);
+
+	// Then we repeat the above, with vectors of more irregular size
+	size = 16 * 1024 + 220;
+
+	// First we create a vector where neighbors have collisions
+	vec = sequential_vector(size);
+	for(int i = 0; i < size; i += 2){
+		vec[i] = vec[i+1];
+	}
+	printf("\nExpected: %d\n", size / 2);
+	test_count(vec, size, 1);
+	free(vec);
+
+	// Then we create a vector where all elements are colliding
+	vec = sequential_vector(size);
+	for(int i = 0; i < size; i++){
+		vec[i] = vec[0];
+	}
+	printf("\nExpected: %d\n", size * (size - 1) / 2);
+	test_count(vec, size, 1);
+	free(vec);
+
+	// Finally, no collisions at all
+	vec = sequential_vector(size);
+	printf("\nExpected: %d\n", 0);
+	test_count(vec, size, 1);
+	free(vec);
 }
 
 
