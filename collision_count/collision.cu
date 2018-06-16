@@ -19,7 +19,9 @@
 #elif METHOD == 10
 	#include "collision_count_grid_nsteps.cuh"
 #elif METHOD == 11
-	#include "collision_count_grid_halfsteps.cuh"
+	#include "collision_count_grid_singlerow_halfsteps.cuh"
+#elif METHOD == 12
+	#include "collision_count_grid_singlerow_nsteps.cuh"
 #else
 	#error "Fix method mate."
 #endif

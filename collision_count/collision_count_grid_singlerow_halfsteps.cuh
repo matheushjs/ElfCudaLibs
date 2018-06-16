@@ -1,5 +1,5 @@
-#ifndef COLLISION_COUNT_HALFSTEPS_GRID_H_
-#define COLLISION_COUNT_HALFSTEPS_GRID_H_
+#ifndef COLLISION_COUNT_HALFSTEPS_GRID_SINGLEROW_H_
+#define COLLISION_COUNT_HALFSTEPS_GRID_SINGLEROW_H_
 
 #include <cuda.h>
 #include <stdlib.h>
@@ -375,7 +375,7 @@ void test_count(int3 *vector, int size, int iters){
 	}
 
 	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
-	printf("Collisions [Half Steps Grid]: %d\n", res);
+	printf("Collisions [Half Steps Grid Singlerow]: %d\n", res);
 }
 
 #endif /* COLLISION_COUNT_HALFSTEPS_H_ */
