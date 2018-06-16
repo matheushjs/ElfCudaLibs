@@ -231,7 +231,7 @@ count_collisions_launch(int3 *vector, int size){
 			break;
 		}
 
-		reduce<<<nBlocks, 1024, sizeof(int) * 1024>>>(d_toReduce, d_reduced);
+		reduce<<<nBlocks, 1024, sizeof(int) * 1024, stream>>>(d_toReduce, d_reduced);
 
 /*
 		int res[nBlocks];
