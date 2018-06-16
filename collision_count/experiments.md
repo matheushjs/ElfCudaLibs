@@ -248,13 +248,22 @@ N Steps
 
 - 6154.776000 ms
 
+- 6099.316000 ms
+	- **Strided global memory access**
+
 Single-Row N Steps
 ---
 
 - 9876.082000 ms
+
+- 9935.070000 ms
+	- **Strided global memory access**
 
 
 Single-Row Half Steps
 ---
 
 - 7916.144000 ms
+
+- 7764.145000 ms
+	- **Strided global memory access**
