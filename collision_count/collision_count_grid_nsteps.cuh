@@ -65,10 +65,11 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	__syncthreads();
 
 	/*
-	if(horizontalId == 0){
+	if(horizontalId == 0 && blockIdx.y == 1){
 		for(int i = 0; i < 2048; i++){
 			printf("%d ", sCoords[i].z);
 		}
+		printf("\n");
 	}
 	__syncthreads();
 	*/
@@ -76,11 +77,24 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	// Count collisions
 	int collisions = 0;
 	// Get index in 'coords' and 'sCoords' of the element we are processing
-	int offset = blockBaseIdx >= threadBaseIdx ? 1 : 1025; // With 1024 blockDim.x and 2048 elements
-	                                                       //  in shared memory, there are only these
-	                                                       //  2 options
-	int elementInScoords = threadIdx.x + offset;
-	int elementInCoords  = blockBaseIdx + elementInScoords;
+	int offset;
+	if(threadBaseIdx == blockBaseIdx) {
+		offset = threadIdx.x + 1;
+	} else if(threadBaseIdx == blockBaseIdx + 1024){
+		offset = threadIdx.x + 1025;
+	} else /* if(threadBaseIdx <= blockBaseIdx + 2048) */{
+		offset = 0;
+	}
+
+/*
+	if(threadIdx.x == 0){
+		printf("Block: (%d, %d), end: %d\n", blockIdx.x, blockIdx.y, blockBaseEndx);
+	}
+	__syncthreads();
+*/
+
+	int elementInScoords = offset;
+	int elementInCoords  = blockBaseIdx + offset;
 	while(elementInCoords < blockBaseEndx){
 		collisions += (
 			buf.x == sCoords[elementInScoords].x
