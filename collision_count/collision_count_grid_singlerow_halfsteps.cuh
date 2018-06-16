@@ -276,15 +276,9 @@ int count_collisions_fetch(struct CollisionCountPromise promise){
 	cudaMemcpy(&result, promise.d_result, sizeof(int), cudaMemcpyDeviceToHost);
 	*/
 
-	int i;
 	const int n = 1;
 	int result[n];
 	cudaMemcpy(&result, promise.d_reduced, sizeof(int) * n, cudaMemcpyDeviceToHost);
-
-	for(i = 0; i < n; i++){
-		printf("%d ", result[i]);
-	}
-	printf("\n");
 
 	cudaFree(promise.d_toReduce);
 	cudaFree(promise.d_reduced);
