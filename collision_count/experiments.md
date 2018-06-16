@@ -267,3 +267,56 @@ Single-Row Half Steps
 
 - 7764.145000 ms
 	- **Strided global memory access**
+
+
+Bandwidth Analysis
+---
+
+Our problem is to calculate collisions among N elements.
+
+The sequential code is as follows:
+
+```python
+vec = get_vector()
+collisions = 0
+for i in range(len(vec) - 1):
+	for j in range(i+1, len(vec)):
+		if vec[i] == vec[j]: collisions++
+```
+
+This means that, for each element $i \in [0, N-2]$ we need to:
+
+1. Read element $i$ from memory
+
+2. Read all elements $j, j>i$ from memory
+
+And in the end we need to write the number of collisions to memory.
+
+For element $i = 0$, we have $1 + (N-1)$ loads
+
+For element $i = 1$, we have $1 + (N-2)$ loads
+
+For element $i = 2$, we have $1 + (N-3)$ loads
+
+...
+
+
+For element $i = N-2$, we have $1 + 1$ loads
+
+Summing everything we have (remember each element consists of 3 integers):
+
+$$
+sum = 3 \cdot [ (N-1) + (1 + 2 + ... + N-1) ] + 1
+$$
+
+$$
+sum = 3 \cdot [ (N-1) + \frac{N * (N-1)}{2} ] + 1
+$$
+
+$$
+sum = 3 \cdot \frac{(2N-2) + N^2 - N}{2} + 1
+$$
+
+$$
+sum = 3 \cdot \frac{N^2 + N - 2}{2} + 1
+$$
