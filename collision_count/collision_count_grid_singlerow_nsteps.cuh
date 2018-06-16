@@ -187,6 +187,11 @@ int lowerStrictPow2(int base){
  */
 struct CollisionCountPromise
 count_collisions_launch(int3 *vector, int size){
+	if(size%2 != 0){
+		fprintf(stderr, "Error: Vector size must be even.\n");
+		exit(1);
+	}
+
 	int3 *d_vector;
 	int *d_result;
 	cudaStream_t stream = get_next_stream();
