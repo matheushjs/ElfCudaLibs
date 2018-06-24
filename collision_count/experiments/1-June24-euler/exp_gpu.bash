@@ -1,5 +1,14 @@
+#PBS -N ColCntGpu
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=24:00:00
+#PBS -m abe
+#PBS -M matheus.saldanha@usp.br
 
 # This experiment is expected to run in less than 50 minutes, using a single GPU.
+
+# load modules
+module load gcc
+module load cuda-toolkit/9.0.176
 
 # Compile different methods
 nvcc -O3 -DMETHOD=10 collision.cu -o prog10;
