@@ -6,3 +6,6 @@ nvprof --unified-memory-profiling off -o nsteps_t.nvprof ./prog
 
 # Collect events and metrics
 nvprof --analysis-metrics -o  nsteps_m.nvprof ./prog
+
+# Collect useful metrics for the collision count algorithm
+nvprof --metrics l1_cache_global_hit_rate,l1_cache_local_hit_rate,achieved_occupancy,gld_requested_throughput,gst_requested_throughput,dram_read_throughput,dram_write_throughput,gst_throughput,gld_throughput,shared_efficiency,gld_efficiency,gst_efficiency,local_load_throughput,local_store_throughput,shared_load_throughput,shared_store_throughput,l2_read_throughput,l2_write_throughput,sysmem_read_throughput,sysmem_write_throughput
