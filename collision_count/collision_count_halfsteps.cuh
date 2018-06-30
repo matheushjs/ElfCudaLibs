@@ -50,8 +50,8 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power, char isOdd,
 
 		collisions += (
 				buf.x == scoords[nextId].x
-				&& buf.y == scoords[nextId].y
-				&& buf.z == scoords[nextId].z
+				& buf.y == scoords[nextId].y
+				& buf.z == scoords[nextId].z
 			);
 	}
 

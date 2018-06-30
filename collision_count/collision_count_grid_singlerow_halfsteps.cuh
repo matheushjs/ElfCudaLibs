@@ -70,8 +70,8 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int star){
 		// Execute one iteration
 		collisions += (
 				buf.x == sCoords[threadIdx.x + offset].x
-				&& buf.y == sCoords[threadIdx.x + offset].y
-				&& buf.z == sCoords[threadIdx.x + offset].z
+				& buf.y == sCoords[threadIdx.x + offset].y
+				& buf.z == sCoords[threadIdx.x + offset].z
 			);
 		offset++;
 		iterations++;

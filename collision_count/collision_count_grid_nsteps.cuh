@@ -98,8 +98,8 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	while(elementInCoords < blockBaseEndx){
 		collisions += (
 			buf.x == sCoords[elementInScoords].x
-			&& buf.y == sCoords[elementInScoords].y
-			&& buf.z == sCoords[elementInScoords].z
+			& buf.y == sCoords[elementInScoords].y
+			& buf.z == sCoords[elementInScoords].z
 		);
 		elementInScoords++;
 		elementInCoords++;

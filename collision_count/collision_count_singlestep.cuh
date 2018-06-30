@@ -39,8 +39,8 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 
 	int collision = (
 			bead1.x == bead2.x
-			&& bead1.y == bead2.y
-			&& bead1.z == bead2.z
+			& bead1.y == bead2.y
+			& bead1.z == bead2.z
 		) * (tid < (N*N + N)/2); // 0 if thread is out of bounds
 
 	// if(tid < 32) printf("(tid, bead1, bead2, collision, lim) == (%d, %d, %d, %d, %d)\n",

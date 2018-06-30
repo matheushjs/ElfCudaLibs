@@ -51,8 +51,8 @@ void count_collisions_cu(int3 *coords, int *result, int lower2Power){
 	for(int j = tid + 1; j < N; j++)
 		collisions += (
 				buf.x == scoords[j].x
-				&& buf.y == scoords[j].y
-				&& buf.z == scoords[j].z
+				& buf.y == scoords[j].y
+				& buf.z == scoords[j].z
 			);
 	__syncthreads();
 
