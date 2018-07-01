@@ -5,6 +5,29 @@
 #include <stdlib.h>
 #include <time.h>
 
+/* Multi-block reduce.
+ * Accepts only vectors that are power of 2.
+ */
+__global__
+void reduce(int *vec, int *result){
+	extern __shared__ int sdata[];
+
+	int tid = threadIdx.x;
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	sdata[tid] = vec[idx];
+	__syncthreads();
+
+	// Reduce
+	for(int stride = blockDim.x >> 1; stride > 0; stride >>= 1){
+		if(threadIdx.x < stride)
+			sdata[threadIdx.x] += sdata[threadIdx.x+stride];
+
+		__syncthreads();
+	}
+
+	result[blockIdx.x] = sdata[0];
+}
+
 /*
  * Collision Count procedure implemented in CUDA.
  * 
@@ -66,11 +89,17 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 	}
 }
 
+// Returns the first power of 2 that is >= 'base'.
+static inline
+int higherEqualPow2(int base){
+	int result = 1;
+	while(result < base) result <<= 1;
+	return result;
+}
 
 struct CollisionCountPromise {
-	int3 *d_vector;
-	int *d_result;
-	int resultSize;
+	int *d_toReduce;
+	int *d_reduced;
 };
 
 /* Given a vector with 3D coordinates of points in the space,
@@ -114,8 +143,10 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Allocate cuda memory for the number of collisions.
 	// Each block will write to an element, the final result (after reduce) will be in result[0].
+	int resultSize = higherEqualPow2(nBlocks);
 	int *d_result;
 	cudaMalloc(&d_result, sizeof(int) * nBlocks);
+	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, streams[launches%nStreams]); // Reset is needed due to size overestimation
 
 	// Calculate amount of shared memory
 	int nShMem = threadsPerBlock * sizeof(int);
@@ -123,7 +154,37 @@ count_collisions_launch(int3 *vector, int size){
 	// Finally launch kernel
 	count_collisions_cu<<<nBlocks, threadsPerBlock, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, nThreads, N);
 
-	const struct CollisionCountPromise ret = { d_vector, d_result, nBlocks };
+	// Reduce the result vector
+	int workSize = resultSize;
+	nBlocks = resultSize/1024;
+	int *d_toReduce = d_result;
+	int *d_reduced  = (int *) d_vector;
+	while(true){
+		if(nBlocks == 0){
+			reduce<<<1, workSize, sizeof(int) * workSize>>>(d_toReduce, d_reduced);
+			break;
+		}
+
+		reduce<<<nBlocks, 1024, sizeof(int) * 1024, streams[launches%nStreams]>>>(d_toReduce, d_reduced);
+
+/*
+		int res[nBlocks];
+		cudaMemcpy(res, d_reduced, sizeof(int) * nBlocks, cudaMemcpyDeviceToHost);
+		for(int i = 0; i < nBlocks; i++) printf("%d ", res[i]);
+		printf("\n\n");
+*/
+
+		// For the next run, vectors should be swapped
+		int *aux = d_reduced;
+		d_reduced = d_toReduce;
+		d_toReduce = aux;
+
+		// For the next run, the workSize and nBlocks are lower
+		workSize = nBlocks;
+		nBlocks = workSize/1024;
+	}
+
+	const struct CollisionCountPromise ret = { d_toReduce, d_reduced };
 	return ret;
 }
 
@@ -133,16 +194,12 @@ count_collisions_launch(int3 *vector, int size){
  *   it shouldn't be used anywhere after a call to this function.
  */
 int count_collisions_fetch(struct CollisionCountPromise promise){
-	
-	int result[promise.resultSize];
-	cudaMemcpy(result, promise.d_result, sizeof(int) * promise.resultSize, cudaMemcpyDeviceToHost);
+	const int n = 1;
+	int result[n];
+	cudaMemcpy(&result, promise.d_reduced, sizeof(int) * n, cudaMemcpyDeviceToHost);
 
-	cudaFree(&promise.d_result);
-	cudaFree(&promise.d_vector);
-
-	int i;
-	for(i = 1; i < promise.resultSize; i++)
-		result[0] += result[i];
+	cudaFree(promise.d_toReduce);
+	cudaFree(promise.d_reduced);
 
 	return result[0];
 }
