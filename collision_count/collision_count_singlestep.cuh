@@ -16,12 +16,15 @@
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 	// Get our thread number
-	int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned long int tid = threadIdx.x + blockIdx.x * blockDim.x;
 	
 	// Get our position in the imaginary matrix
-	int vecId = (tid * (N + 1)) % (N*N);
-	int row = vecId / N;
-	int col = vecId % N;
+	unsigned long int vecId = (tid * (N + 1)) % (N*N);
+	unsigned long int row = vecId / N;
+	unsigned long int col = vecId % N;
+
+	if(threadIdx.x == 0 && blockIdx.x == gridDim.x -1)
+		printf("%ld %ld\n", vecId, N+1);
 
 	// Transpose if we are on lower triangle
 	if(row > col){
@@ -41,11 +44,12 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 			bead1.x == bead2.x
 			& bead1.y == bead2.y
 			& bead1.z == bead2.z
-		) * (tid < (N*N + N)/2); // 0 if thread is out of bounds
+		);
 
 	// if(tid < 32) printf("(tid, bead1, bead2, collision, lim) == (%d, %d, %d, %d, %d)\n",
 	//		tid, row, col+1, collision, (tid < (N*N + N)/2));
-	sdata[threadIdx.x] = collision;
+	sdata[threadIdx.x] = collision
+	                     * (tid < (N*N + N)/2); // thread out of bounds
 	__syncthreads();
 	
 	// Reduce shared memory into the first element
