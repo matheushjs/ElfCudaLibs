@@ -75,6 +75,36 @@ int3 *create_vector(int size){
 	return result;
 }
 
+// Creates random vector with size/2 collisions
+int3 *random_vector(int size){
+	int i;
+	int3 *result = (int3 *) malloc(sizeof(int3) * size);
+
+	// Generate beads with size/2 collisions
+	for(i = 0; i < size; i += 2){
+		result[i].x = (i*2) - size; // Guarantees different positions among pairs of beads
+		result[i].y = rand()%(2*size) - size;
+		result[i].z = rand()%(2*size) - size;
+
+		// Next bead is the same as previous
+		result[i+1] = result[i];
+	}
+
+	// Randomize bead positions
+	for(i = 0; i < size; i++){
+		int a = rand()%size;
+		int b = rand()%size;
+
+		int3 aux = result[a];
+		result[a] = result[b];
+		result[b] = aux;
+	}
+
+	printf("Collisions expected: %d\n", size/2);
+
+	return result;
+}
+
 int3 *sequential_vector(int size){
 	int3 *result = (int3 *) malloc(sizeof(int3) * size);
 
@@ -90,13 +120,11 @@ void t1(){
 	test_count(dummy, dummySize, 1);
 }
 
-void t2(int vecSize){
+void t2(int vecSize, int iters){
 	// int vecSize = 1000;
 	// int iters = 10000;
 
-	int iters = 1;
-
-	int3 *vec = create_vector(vecSize);
+	int3 *vec = random_vector(vecSize);
 
 	test_count(vec, vecSize, iters);
 	free(vec);
@@ -159,21 +187,25 @@ void t3(){
 
 
 int main(int argc, char *argv[]){
-	int vecSize;
+	int vecSize = 32 * 16 * 1024;
+	int iters   = 1;
 	
 	switch(argc){
 		case 1:
-			vecSize = 32 * 16 * 1024;
 			break;
 		case 2:
 			vecSize = atoi(argv[1]);
 			break;
 		case 3:
+			vecSize = atoi(argv[1]);
+			iters   = atoi(argv[2]);
+			break;
+		default:
 			fprintf(stderr, "Usage: %s [problem_size]\n", argv[0]);
 			return 1;
 	}
 	
-	t2(vecSize);
+	t2(vecSize, iters);
 	
 	return 0;
 }
