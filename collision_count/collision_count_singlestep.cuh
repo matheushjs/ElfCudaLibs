@@ -89,12 +89,39 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 	}
 }
 
+/* Gets the next cuda stream in the circular list of streams.
+ */
+cudaStream_t get_next_stream(){
+	const int nStreams = 8;
+	static cudaStream_t streams[nStreams];
+	static unsigned int launches = 0;
+
+	// Allocate cuda streams in the first execution
+	static int streamInit = 0;
+	if(streamInit == 0){
+		streamInit = 1;
+		for(int i = 0; i < nStreams; i++){
+			cudaStreamCreate(&streams[i]);
+		}
+	}
+
+	launches++;
+	return streams[launches%nStreams];
+}
+
 // Returns the first power of 2 that is >= 'base'.
 static inline
 int higherEqualPow2(int base){
 	int result = 1;
 	while(result < base) result <<= 1;
 	return result;
+}
+
+/* Divides 'dividend' by 'divisor', rounding up.
+ */
+static inline
+int divisionCeil(int dividend, int divisor){
+	return (dividend + divisor - 1) / divisor;
 }
 
 struct CollisionCountPromise {
@@ -112,23 +139,13 @@ struct CollisionCountPromise {
  */
 struct CollisionCountPromise
 count_collisions_launch(int3 *vector, int size){
-	// Allocate cuda streams in the first execution
-	const int nStreams = 8;
-	static cudaStream_t streams[nStreams];
-	static int streamInit = 0;
-	if(streamInit == 0){
-		streamInit = 1;
-		for(int i = 0; i < nStreams; i++){
-			cudaStreamCreate(&streams[i]);
-		}
-	}
-	static unsigned int launches = 0;
-	launches++;
+	int3 *d_vector;
+	int *d_result;
+	cudaStream_t stream = get_next_stream();
 
 	// Allocate cuda vector for the 3D coordinates
-	int3 *d_vector;
 	cudaMalloc(&d_vector, sizeof(int3) * size);
-	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, streams[launches%nStreams]);
+	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, stream);
 
 
 	// Prepare to launch kernel
@@ -139,20 +156,19 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Count number of threads per block and number of blocks
 	int threadsPerBlock = 1024;
-	int nBlocks = (nThreads + threadsPerBlock - 1) / threadsPerBlock; //Rounds up nThreads/thrPerBlock
+	int nBlocks = divisionCeil(nThreads, threadsPerBlock); //Rounds up nThreads/thrPerBlock
 
 	// Allocate cuda memory for the number of collisions.
 	// Each block will write to an element, the final result (after reduce) will be in result[0].
 	int resultSize = higherEqualPow2(nBlocks);
-	int *d_result;
 	cudaMalloc(&d_result, sizeof(int) * nBlocks);
-	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, streams[launches%nStreams]); // Reset is needed due to size overestimation
+	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
 
 	// Calculate amount of shared memory
 	int nShMem = threadsPerBlock * sizeof(int);
 
 	// Finally launch kernel
-	count_collisions_cu<<<nBlocks, threadsPerBlock, nShMem, streams[launches%nStreams]>>>(d_vector, d_result, nThreads, N);
+	count_collisions_cu<<<nBlocks, threadsPerBlock, nShMem, stream>>>(d_vector, d_result, nThreads, N);
 
 	// Reduce the result vector
 	int workSize = resultSize;
@@ -165,7 +181,7 @@ count_collisions_launch(int3 *vector, int size){
 			break;
 		}
 
-		reduce<<<nBlocks, 1024, sizeof(int) * 1024, streams[launches%nStreams]>>>(d_toReduce, d_reduced);
+		reduce<<<nBlocks, 1024, sizeof(int) * 1024, stream>>>(d_toReduce, d_reduced);
 
 /*
 		int res[nBlocks];
