@@ -8,6 +8,8 @@
 module load gcc
 module load cuda-toolkit/9.0.176
 
+DIR=/home/mathjs/collision_count
+cd $DIR
 
 # Here we will experiment with the multiple-blocks approaches
 # We want to plot a graph [problem size]x[execution time]
@@ -26,8 +28,8 @@ time {
 		echo "id,psize,elapsed,real,user,system" > $progName.out
 
 		psizeBegin=1024
-		psizeInc=32768
-		psizeEnd=983040
+		psizeInc=65536
+		psizeEnd=4194304
 
 		for problemSize in $(seq $psizeBegin $psizeInc $psizeEnd); do
 			for executionId in $(seq 5); do

@@ -10,6 +10,9 @@
 module load gcc
 module load cuda-toolkit/9.0.176
 
+DIR=/home/mathjs/collision_count
+cd $DIR
+
 nvcc -O3 -DMETHOD=4 collision.cu -o prog_seq_linear;
 echo "Compiled."
 
