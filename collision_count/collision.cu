@@ -90,11 +90,10 @@ void t1(){
 	test_count(dummy, dummySize, 1);
 }
 
-void t2(){
+void t2(int vecSize){
 	// int vecSize = 1000;
 	// int iters = 10000;
 
-	int vecSize = 32 * 16 * 1024;
 	int iters = 1;
 
 	int3 *vec = create_vector(vecSize);
@@ -160,6 +159,21 @@ void t3(){
 
 
 int main(int argc, char *argv[]){
-	t2();
+	int vecSize;
+	
+	switch(argc){
+		case 1:
+			vecSize = 32 * 16 * 1024;
+			break;
+		case 2:
+			vecSize = atoi(argv[1]);
+			break;
+		case 3:
+			fprintf(stderr, "Usage: %s [problem_size]\n", argv[0]);
+			return 1;
+	}
+	
+	t2(vecSize);
+	
 	return 0;
 }
