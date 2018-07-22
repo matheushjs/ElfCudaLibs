@@ -1,13 +1,9 @@
-#ifndef COLLISION_COUNT_SEQUENTIAL_LINEAR_H
-#define COLLISION_COUNT_SEQUENTIAL_LINEAR_H
-
-#include <time.h>
 #include <stdio.h>
+
+#include "ElfColCnt.cuh"
 
 #define COORD3D(V, AXIS) COORD(V.x, V.y, V.z, AXIS)
 #define COORD(X, Y, Z, AXIS) ( (Z+AXIS/2) * ((long int) AXIS*AXIS) + (Y+AXIS/2) * ((long int) AXIS) + (X+AXIS/2))
-
-#define AXISTYPE char
 
 /* Given a vector with 3D coordinates of points in the space,
  *   this function calculates the number of collisions among
@@ -39,24 +35,4 @@ int count_collisions(int3 *vector, int size, AXISTYPE *space3d, int axisSize){
 	return collisions;
 }
 
-void test_count(int3 *vector, int size, int iters){
-	int i, res;
 
-	int beg = clock();
-	
-	int axisSize = (size + 1) * 2;
-	unsigned long memSize = sizeof(AXISTYPE) * axisSize * axisSize * (unsigned long) axisSize;
-	AXISTYPE *space3d = (AXISTYPE *) malloc(memSize);
-	printf("Memsize: %lf Gb, Pointer: %p\n", memSize / (double) 1024 / 1024 / 1024, space3d);
-	for(i = 0; i < iters; i++){
-		res = count_collisions(vector, size, space3d, axisSize);
-	}
-
-	free(space3d);
-	
-	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
-	printf("Collisions [Linear]: %d\n", res);
-}
-
-
-#endif // COLLISION_COUNT_SEQUENTIAL_LINEAR_H

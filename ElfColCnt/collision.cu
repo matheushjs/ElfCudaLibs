@@ -2,24 +2,47 @@
 #include <stdlib.h>
 #include <cuda.h>
 
-#ifndef METHOD
+#ifdef SEQUENTIAL_QUADRATIC
+	#define METHOD 0
+#endif
+#ifdef SEQUENTIAL_LINEAR
 	#define METHOD 1
+#endif
+#ifdef NSTEPS_SINGLEROW
+	#define METHOD 2
+#endif
+#ifdef NSTEPS_MULTIROW
+	#define METHOD 3
+#endif
+#ifdef HALFSTEPS_SINGLEROW
+	#define METHOD 4
+#endif
+#ifdef SINGLESTEPS_ALLTHREADS
+	#define METHOD 5
+#endif
+#ifdef SINGLESTEPS_HALFTHREADS
+	#define METHOD 6
+#endif
+
+
+#ifndef METHOD
+	#define METHOD 0
 #endif
 
 #if METHOD == 0
-	#include "ElfColCnt_seq_quad.cuh" // Sequential Quadratic
+	#include "Sequential_Quadratic/test.cuh"
 #elif METHOD == 1
-	#include "ElfColCnt_seq_lin.cuh"  // Sequential Linear
+	#include "Sequential_Linear/test.cuh"
 #elif METHOD == 2
-	#include "ElfColCnt_ns_sr.cuh"    // NSteps SingleRow
+	#include "NSteps_SingleRow/test.cuh"
 #elif METHOD == 3
-	#include "ElfColCnt_ns_mr.cuh"    // NSteps MultiRow
+	#include "NSteps_MultiRow/test.cuh"
 #elif METHOD == 4
-	#include "ElfColCnt_hs_sr.cuh"    // HalfSteps SingleRow
+	#include "HalfSteps_SingleRow/test.cuh"
 #elif METHOD == 5
-	#include "ElfColCnt_ss_at.cuh"    // SingleSteps AllThreads
+	#include "SingleSteps_AllThreads/test.cuh"
 #elif METHOD == 6
-	#include "ElfColCnt_ss_ht.cuh"    // SingleSteps HalfThreads
+	#include "SingleSteps_HalfThreads/test.cuh"
 #else
 	#error "Fix method mate."
 #endif
@@ -130,30 +153,40 @@ void t2(int vecSize, int iters){
 
 void t3(){
 	int size = 16 * 1024;
+	int gold, res;
 
 	// First we create a vector where neighbors have collisions
 	int3 *vec = sequential_vector(size);
 	for(int i = 0; i < size; i += 2){
 		vec[i] = vec[i+1];
 	}
-	printf("\nExpected: %d\n", size / 2);
-	test_count(vec, size, 1);
+	gold = size/2;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
 	free(vec);
+	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Then we create a vector where all elements are colliding
 	vec = sequential_vector(size);
 	for(int i = 0; i < size; i++){
 		vec[i] = vec[0];
 	}
-	printf("\nExpected: %d\n", size * (size - 1) / 2);
-	test_count(vec, size, 1);
+	gold = size * (size - 1) / 2;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
 	free(vec);
+	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Finally, no collisions at all
 	vec = sequential_vector(size);
-	printf("\nExpected: %d\n", 0);
-	test_count(vec, size, 1);
+	gold = 0;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
 	free(vec);
+	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Then we repeat the above, with vectors of more irregular size
 	size = 16 * 1024 + 220;
@@ -163,24 +196,33 @@ void t3(){
 	for(int i = 0; i < size; i += 2){
 		vec[i] = vec[i+1];
 	}
-	printf("\nExpected: %d\n", size / 2);
-	test_count(vec, size, 1);
+	gold = size/2;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
 	free(vec);
+	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Then we create a vector where all elements are colliding
 	vec = sequential_vector(size);
 	for(int i = 0; i < size; i++){
 		vec[i] = vec[0];
 	}
-	printf("\nExpected: %d\n", size * (size - 1) / 2);
-	test_count(vec, size, 1);
+	gold = size * (size - 1) / 2;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
 	free(vec);
+	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Finally, no collisions at all
 	vec = sequential_vector(size);
-	printf("\nExpected: %d\n", 0);
-	test_count(vec, size, 1);
+	gold = 0;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
 	free(vec);
+	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
 }
 
 
@@ -203,8 +245,8 @@ int main(int argc, char *argv[]){
 			return 1;
 	}
 	
-	t2(vecSize, iters);
-	// t3();
+	// t2(vecSize, iters);
+	t3();
 
 	return 0;
 }

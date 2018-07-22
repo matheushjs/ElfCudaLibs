@@ -1,9 +1,7 @@
-#ifndef COLLISION_COUNT_SINGLESTEP_H_
-#define COLLISION_COUNT_SINGLESTEP_H_
-
 #include <cuda.h>
 #include <stdlib.h>
-#include <time.h>
+
+#include "ElfColCnt.cuh"
 
 /* Multi-block reduce.
  * Accepts only vectors that are power of 2.
@@ -35,33 +33,18 @@ void reduce(int *vec, int *result){
  * - For now we assume threadsPerBlock is a power of 2.
  * 
  * Required shared memory: threadsPerBlock * sizeof(int)
+ * TODO
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
-	// Get our thread number
-	unsigned long int tid = threadIdx.x + blockIdx.x * blockDim.x;
-	
-	// Get our position in the imaginary matrix
-	unsigned long int vecId = (tid * (N + 1)) % (N*N);
-	unsigned long int row = vecId / N;
-	unsigned long int col = vecId % N;
+	int horizontalId = threadIdx.x + blockIdx.x * blockDim.x;
+	int row = horizontalId / N;
+	int col = horizontalId % N;
 
-	if(threadIdx.x == 0 && blockIdx.x == gridDim.x -1)
-		printf("%ld %ld\n", vecId, N+1);
-
-	// Transpose if we are on lower triangle
-	if(row > col){
-		row = col;
-		col = vecId / N;
-	}
-
-	// if(tid < 32) printf("(tid, row, col) == (%d, %d, %d)\n", tid, row, col);
-
-	// Calculate collision
 	extern __shared__ int sdata[];
 	
 	int3 bead1 = coords[row];
-	int3 bead2 = coords[col+1];
+	int3 bead2 = coords[col];
 
 	int collision = (
 			bead1.x == bead2.x
@@ -69,10 +52,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 			& bead1.z == bead2.z
 		);
 
-	// if(tid < 32) printf("(tid, bead1, bead2, collision, lim) == (%d, %d, %d, %d, %d)\n",
-	//		tid, row, col+1, collision, (tid < (N*N + N)/2));
-	sdata[threadIdx.x] = collision
-	                     * (tid < (N*N + N)/2); // thread out of bounds
+	sdata[threadIdx.x] = collision * (row < col);
 	__syncthreads();
 	
 	// Reduce shared memory into the first element
@@ -91,6 +71,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 
 /* Gets the next cuda stream in the circular list of streams.
  */
+static
 cudaStream_t get_next_stream(){
 	const int nStreams = 8;
 	static cudaStream_t streams[nStreams];
@@ -124,11 +105,6 @@ int divisionCeil(int dividend, int divisor){
 	return (dividend + divisor - 1) / divisor;
 }
 
-struct CollisionCountPromise {
-	int *d_toReduce;
-	int *d_reduced;
-};
-
 /* Given a vector with 3D coordinates of points in the space,
  *   this function calculates the number of collisions among
  *   points, using CUDA-enable GPU.
@@ -144,10 +120,8 @@ count_collisions_launch(int3 *vector, int size){
 	cudaStream_t stream = get_next_stream();
 
 	// Prepare to launch kernel
-	// Get the imaginary matrix dimension
-	int N = size - 1;
-	// Count total number of threads
-	int nThreads = (N*N + N) / 2; // Always divisible by 2.
+	int N = size;
+	int nThreads = N*N;
 
 	// Count number of threads per block and number of blocks
 	int threadsPerBlock = 1024;
@@ -220,24 +194,3 @@ int count_collisions_fetch(struct CollisionCountPromise promise){
 
 	return result[0];
 }
-
-void test_count(int3 *vector, int size, int iters){
-	struct CollisionCountPromise *promises;
-	promises = (struct CollisionCountPromise *) malloc(sizeof(struct CollisionCountPromise) * iters);
-
-	int beg = clock();
-
-	int i, res;
-	for(i = 0; i < iters; i++){
-		promises[i] = count_collisions_launch(vector, size);
-	}
-
-	for(i = 0; i < iters; i++){
-		res = count_collisions_fetch(promises[i]);
-	}
-
-	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
-	printf("Collisions [SingleSteps HalfThreads]: %d\n", res);
-}
-
-#endif /* COLLISION_COUNT_SINGLESTEP_H_ */

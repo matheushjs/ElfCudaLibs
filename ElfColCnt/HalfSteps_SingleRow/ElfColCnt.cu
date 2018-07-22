@@ -1,9 +1,8 @@
-#ifndef COLLISION_COUNT_NSTEPS_GRID_SINGLEROW_H_
-#define COLLISION_COUNT_NSTEPS_GRID_SINGLEROW_H_
-
 #include <cuda.h>
 #include <stdlib.h>
-#include <time.h>
+#include <stdio.h>
+
+#include "ElfColCnt.cuh"
 
 /* Multi-block reduce.
  * Accepts only vectors that are power of 2.
@@ -38,58 +37,45 @@ void reduce(int *vec, int *result){
  *     collisions += (bead[i] == bead[j])
  * by performing just the outer 'for' in parallel.
  *
- * TODO: Assumptions:
+ * TODO Assumptions:
  *   - The grid of blocks has dimension HxW (height x width)
  *   - Horizontally, 'coords' is split  among each each block (not necessarily evenly), meaning each
  *       block is in charge of some number N of elements.
  *   - The amount of shared memory required is:  N * sizeof(int3)
  */
 __global__
-void count_collisions_cu(int3 *coords, int *result, int nCoords){
+void count_collisions_cu(int3 *coords, int *result, int nCoords, int star){
 	int baseIdx = blockIdx.x * 1024;
-	int maxIterations = nCoords - baseIdx;
 	int horizontalId = threadIdx.x + blockIdx.x * blockDim.x;
 
-	// We read our element in a register
+	// We read our element in a register (surplus threads will read anything)
 	int3 buf = coords[horizontalId % nCoords];
-	
-	// Read the 2 blocks into shared memory (surplus threads read anything)
+
+	// Read first 2 blocks into shared memory
 	extern __shared__ int3 sCoords[];
 	sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
 	sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x + 1024) % nCoords ];
 	__syncthreads();
-
+	
 	// Move our base index
 	baseIdx = baseIdx + 2048; // We could use modulus here, but doesn't seem necessary
 
-	/*
-	if(horizontalId == 0){
-		for(int i = 0; i < 2048; i++){
-			printf("%d ", sCoords[i].z);
-		}
-	}
-	__syncthreads();
-	*/
-
-	// Count collisions
 	int iterations = 0;
-	int offset = 1;
 	int collisions = 0;
-	while(iterations < maxIterations){
-		
-		// horizontalId + iterations + 1 is the element we are comparing to
-		if(horizontalId + iterations + 1 < nCoords){
-			collisions += (
+	int offset = 1;
+
+	while(iterations < star){
+		// Execute one iteration
+		collisions += (
 				buf.x == sCoords[threadIdx.x + offset].x
 				& buf.y == sCoords[threadIdx.x + offset].y
 				& buf.z == sCoords[threadIdx.x + offset].z
 			);
-		}
 		offset++;
 		iterations++;
 		
 		// Change blocks in shared memory when needed
-		if(offset == 1025 && baseIdx < nCoords){
+		if(offset == 1025){
 			// Unfortunately we need to synchronize threads here
 			__syncthreads();
 			
@@ -106,11 +92,28 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 
 			offset = 1;
 		}
-
 	}
+
+	// The vector has an even number of elements
+	// Because of this, half of the elements must execute one more iteration
+	// Notice that the way the 'for...loop' above was implemented, when the
+	//   code reach this point, the shared memory has valid elements for one
+	//   more iteration, so we don't need to verify it again.
+	// Do one more iteration:
+	if(horizontalId < nCoords/2){
+		collisions += (
+			buf.x == sCoords[threadIdx.x + offset].x
+			&& buf.y == sCoords[threadIdx.x + offset].y
+			&& buf.z == sCoords[threadIdx.x + offset].z
+		);
+		offset++;
+		iterations++;
+	}
+
 	__syncthreads();
 
-	// Fill shared memory with collisions (surplus threads are ignored)
+	// Fill shared memory with collisions
+	// We ignore collision from surplus threads
 	extern __shared__ int sdata[];
 	sdata[threadIdx.x] = collisions * (horizontalId < nCoords);
 	__syncthreads();
@@ -122,20 +125,16 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 
 		__syncthreads();
 	}
-	
+
 	// Export result
 	if(threadIdx.x == 0){
 		result[blockIdx.x] = sdata[0];
 	}
 }
 
-struct CollisionCountPromise {
-	int *d_toReduce;
-	int *d_reduced;
-};
-
 /* Gets the next cuda stream in the circular list of streams.
  */
+static
 cudaStream_t get_next_stream(){
 	const int nStreams = 8;
 	static cudaStream_t streams[nStreams];
@@ -206,6 +205,10 @@ count_collisions_launch(int3 *vector, int size){
 	int nBlocks = divisionCeil(size, nThreads);
 	int nShMem = elemInShmem * sizeof(int3); // Shared memory required
 
+	// Calculate the number of iterations S* (S star); we call it 'star'
+	// We assume 'size' is even, so this formula is correct.
+	int star = (size - 2)/2;
+
 	// Allocate cuda memory for the number of collisions
 	// This will also be used as a working vector for reducing among blocks
 	int resultSize = higherEqualPow2(nBlocks);
@@ -213,8 +216,8 @@ count_collisions_launch(int3 *vector, int size){
 	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
 
 	// Finally launch kernels
-	count_collisions_cu<<<nBlocks, nThreads, nShMem, stream>>>(d_vector, d_result, size);
-	
+	count_collisions_cu<<<nBlocks, nThreads, nShMem, stream>>>(d_vector, d_result, size, star);
+
 /*
 	int res[resultSize];
 	cudaMemcpy(res, d_result, sizeof(int) * resultSize, cudaMemcpyDeviceToHost);
@@ -343,24 +346,3 @@ void test_reduce(){
 	cudaFree(d_vector);
 	free(vector);
 }
-
-void test_count(int3 *vector, int size, int iters){
-	struct CollisionCountPromise *promises;
-	promises = (struct CollisionCountPromise *) malloc(sizeof(struct CollisionCountPromise) * iters);
-
-	int beg = clock();
-
-	int i, res;
-	for(i = 0; i < iters; i++){
-		promises[i] = count_collisions_launch(vector, size);
-	}
-
-	for(i = 0; i < iters; i++){
-		res = count_collisions_fetch(promises[i]);
-	}
-
-	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
-	printf("Collisions [N Steps Grid 1Row]: %d\n", res);
-}
-
-#endif /* COLLISION_COUNT_NSTEPS_H_ */
