@@ -17,6 +17,8 @@
 #elif METHOD == 4
 	#include "ElfColCnt_hs_sr.cuh"    // HalfSteps SingleRow
 #elif METHOD == 5
+	#include "ElfColCnt_ss_at.cuh"    // SingleSteps AllThreads
+#elif METHOD == 6
 	#include "ElfColCnt_ss_ht.cuh"    // SingleSteps HalfThreads
 #else
 	#error "Fix method mate."
@@ -202,6 +204,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	t2(vecSize, iters);
-	
+	// t3();
+
 	return 0;
 }
