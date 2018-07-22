@@ -161,7 +161,7 @@ count_collisions_launch(int3 *vector, int size){
 	// Allocate cuda memory for the number of collisions.
 	// Each block will write to an element, the final result (after reduce) will be in result[0].
 	int resultSize = higherEqualPow2(nBlocks);
-	cudaMalloc(&d_result, sizeof(int) * nBlocks);
+	cudaMalloc(&d_result, sizeof(int) * resultSize);
 	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
 
 	// Calculate amount of shared memory
