@@ -227,7 +227,7 @@ count_collisions_launch(int3 *vector, int size){
 	int *d_reduced  = (int *) d_vector;
 	while(true){
 		if(nBlocks == 0){
-			reduce<<<1, workSize, sizeof(int) * workSize>>>(d_toReduce, d_reduced);
+			reduce<<<1, workSize, sizeof(int) * workSize, stream>>>(d_toReduce, d_reduced);
 			break;
 		}
 
