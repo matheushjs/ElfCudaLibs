@@ -1,4 +1,4 @@
-METHOD?=11
+METHOD?=2
 
 all:
 	nvcc -O3 -DMETHOD=$(METHOD) collision.cu -o prog

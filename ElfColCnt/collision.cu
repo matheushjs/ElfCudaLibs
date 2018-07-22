@@ -7,17 +7,17 @@
 #endif
 
 #if METHOD == 0
-	#include "ElfColCnt_nsteps.cuh"
+	#include "ElfColCnt_seq_quad.cuh" // Sequential Quadratic
+#elif METHOD == 1
+	#include "ElfColCnt_seq_lin.cuh"  // Sequential Linear
+#elif METHOD == 2
+	#include "ElfColCnt_ns_sr.cuh"    // NSteps SingleRow
 #elif METHOD == 3
-	#include "ElfColCnt_sequential.cuh"
+	#include "ElfColCnt_ns_mr.cuh"    // NSteps MultiRow
 #elif METHOD == 4
-	#include "ElfColCnt_sequential_linear.cuh"
-#elif METHOD == 10
-	#include "ElfColCnt_grid_nsteps.cuh"
-#elif METHOD == 11
-	#include "ElfColCnt_grid_singlerow_halfsteps.cuh"
-#elif METHOD == 12
-	#include "ElfColCnt_grid_singlerow_nsteps.cuh"
+	#include "ElfColCnt_hs_sr.cuh"    // HalfSteps SingleRow
+#elif METHOD == 5
+	#include "ElfColCnt_ss_ht.cuh"    // SingleSteps HalfThreads
 #else
 	#error "Fix method mate."
 #endif
