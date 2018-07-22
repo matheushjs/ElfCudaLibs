@@ -8,10 +8,6 @@
 
 #if METHOD == 0
 	#include "collision_count_nsteps.cuh"
-#elif METHOD == 1
-	#include "collision_count_halfsteps.cuh"
-#elif METHOD == 2
-	#include "collision_count_singlestep.cuh"
 #elif METHOD == 3
 	#include "collision_count_sequential.cuh"
 #elif METHOD == 4
