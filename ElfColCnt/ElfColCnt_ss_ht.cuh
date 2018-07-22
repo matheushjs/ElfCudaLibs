@@ -143,11 +143,6 @@ count_collisions_launch(int3 *vector, int size){
 	int *d_result;
 	cudaStream_t stream = get_next_stream();
 
-	// Allocate cuda vector for the 3D coordinates
-	cudaMalloc(&d_vector, sizeof(int3) * size);
-	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, stream);
-
-
 	// Prepare to launch kernel
 	// Get the imaginary matrix dimension
 	int N = size - 1;
@@ -164,6 +159,12 @@ count_collisions_launch(int3 *vector, int size){
 	cudaMalloc(&d_result, sizeof(int) * resultSize);
 	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
 
+	// Allocate cuda vector for the 3D coordinates.
+	// Maximum because we'll need extra space for reduction later. This is because there are too many blocks.
+	int vectorBytes = max(sizeof(int3) * size, (sizeof(int) * resultSize)/1024);
+	cudaMalloc(&d_vector, vectorBytes);
+	cudaMemcpyAsync(d_vector, vector, vectorBytes, cudaMemcpyHostToDevice, stream);
+
 	// Calculate amount of shared memory
 	int nShMem = threadsPerBlock * sizeof(int);
 
@@ -174,7 +175,7 @@ count_collisions_launch(int3 *vector, int size){
 	int workSize = resultSize;
 	nBlocks = resultSize/1024;
 	int *d_toReduce = d_result;
-	int *d_reduced  = (int *) d_vector;
+	int *d_reduced  = (int *) d_vector; // must have size at least 'nBlocks'
 	while(true){
 		if(nBlocks == 0){
 			reduce<<<1, workSize, sizeof(int) * workSize, stream>>>(d_toReduce, d_reduced);

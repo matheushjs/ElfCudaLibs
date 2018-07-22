@@ -187,10 +187,6 @@ count_collisions_launch(int3 *vector, int size){
 	int *d_result;
 	cudaStream_t stream = get_next_stream();
 
-	// Allocate cuda vector for the 3D coordinates
-	cudaMalloc(&d_vector, sizeof(int3) * size);
-	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, stream);
-
 	// Prepare kernel launch parameters
 	const int elemInShmem = 2048; // 2048 allows 2 blocks to use the whole shared memory available.
 	dim3 dimBlock(1024, 1); // We allocate maximum number of threads per block.
@@ -205,6 +201,12 @@ count_collisions_launch(int3 *vector, int size){
 	int resultSize = higherEqualPow2(dimGrid.x * dimGrid.y);
 	cudaMalloc(&d_result, sizeof(int) * resultSize);
 	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
+
+	// Allocate cuda vector for the 3D coordinates.
+	// Maximum because we'll need extra space for reduction later. This is because there are too many blocks.
+	int vectorBytes = max(sizeof(int3) * size, (sizeof(int) * resultSize)/1024);
+	cudaMalloc(&d_vector, vectorBytes);
+	cudaMemcpyAsync(d_vector, vector, vectorBytes, cudaMemcpyHostToDevice, stream);
 
 	// We find the power of 2 immediately below 'nThreads'
 	// We calculate this here to avoid calculating it into the GPU
@@ -224,7 +226,7 @@ count_collisions_launch(int3 *vector, int size){
 	int workSize = resultSize;
 	int nBlocks = resultSize/1024;
 	int *d_toReduce = d_result;
-	int *d_reduced  = (int *) d_vector;
+	int *d_reduced  = (int *) d_vector; // must have size at least 'nBlocks'
 	while(true){
 		if(nBlocks == 0){
 			reduce<<<1, workSize, sizeof(int) * workSize, stream>>>(d_toReduce, d_reduced);
