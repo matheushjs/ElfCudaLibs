@@ -7,17 +7,17 @@
 #endif
 
 #if METHOD == 0
-	#include "collision_count_nsteps.cuh"
+	#include "ElfColCnt_nsteps.cuh"
 #elif METHOD == 3
-	#include "collision_count_sequential.cuh"
+	#include "ElfColCnt_sequential.cuh"
 #elif METHOD == 4
-	#include "collision_count_sequential_linear.cuh"
+	#include "ElfColCnt_sequential_linear.cuh"
 #elif METHOD == 10
-	#include "collision_count_grid_nsteps.cuh"
+	#include "ElfColCnt_grid_nsteps.cuh"
 #elif METHOD == 11
-	#include "collision_count_grid_singlerow_halfsteps.cuh"
+	#include "ElfColCnt_grid_singlerow_halfsteps.cuh"
 #elif METHOD == 12
-	#include "collision_count_grid_singlerow_nsteps.cuh"
+	#include "ElfColCnt_grid_singlerow_nsteps.cuh"
 #else
 	#error "Fix method mate."
 #endif
