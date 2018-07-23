@@ -1,6 +1,6 @@
 #!/bin/bash
 
-make
+make test
 
 echo "HalfSteps SingleRow"
 ./hs_sr | grep -e SUCCESS -e FAILURE

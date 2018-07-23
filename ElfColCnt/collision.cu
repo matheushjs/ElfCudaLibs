@@ -2,6 +2,27 @@
 #include <stdlib.h>
 #include <cuda.h>
 
+/*
+ * MACROS for building programs BUILD_TEST mode or BUILD_USER mode
+ *    TEST - when run, the program will execute the batch of tests we defined
+ *    USER - when run, the program will count collisions for a vector of size provided as program argument
+ * If nothing is specified, BUILD_USER is assumed.
+ */
+#ifdef BUILD_USER
+	#define BUILD_USER 1
+#else
+	#define BUILD_USER 0
+#endif
+#ifdef BUILD_TEST
+	#define BUILD_TEST 1
+#else
+	#define BUILD_TEST 0
+#endif
+
+
+/*
+ * MACROS for defining which collision count method to test.
+ */
 #ifdef SEQUENTIAL_QUADRATIC
 	#define METHOD 0
 #endif
@@ -23,12 +44,13 @@
 #ifdef SINGLESTEPS_HALFTHREADS
 	#define METHOD 6
 #endif
-
-
-#ifndef METHOD
+#ifndef METHOD // If no method is defined
 	#define METHOD 0
 #endif
 
+/*
+ * Include collision count method as defined by macro METHOD
+ */
 #if METHOD == 0
 	#include "Sequential_Quadratic/test.cuh"
 #elif METHOD == 1
@@ -245,8 +267,11 @@ int main(int argc, char *argv[]){
 			return 1;
 	}
 	
-	// t2(vecSize, iters);
+#if BUILD_TEST == 1
 	t3();
+#else
+	t2(vecSize, iters);
+#endif
 
 	return 0;
 }
