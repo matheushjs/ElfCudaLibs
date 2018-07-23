@@ -144,13 +144,6 @@ count_collisions_launch(int3 *vector, int size){
 
 		reduce<<<nBlocks, 1024, sizeof(int) * 1024, stream>>>(d_toReduce, d_reduced);
 
-/*
-		int res[nBlocks];
-		cudaMemcpy(res, d_reduced, sizeof(int) * nBlocks, cudaMemcpyDeviceToHost);
-		for(int i = 0; i < nBlocks; i++) printf("%d ", res[i]);
-		printf("\n\n");
-*/
-
 		// For the next run, vectors should be swapped
 		int *aux = d_reduced;
 		d_reduced = d_toReduce;

@@ -55,8 +55,6 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 		col = vecId / N;
 	}
 
-	// if(tid < 32) printf("(tid, row, col) == (%d, %d, %d)\n", tid, row, col);
-
 	// Calculate collision
 	extern __shared__ int sdata[];
 	
@@ -69,8 +67,6 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 			& bead1.z == bead2.z
 		);
 
-	// if(tid < 32) printf("(tid, bead1, bead2, collision, lim) == (%d, %d, %d, %d, %d)\n",
-	//		tid, row, col+1, collision, (tid < (N*N + N)/2));
 	sdata[threadIdx.x] = collision
 	                     * (tid < (N*N + N)/2); // thread out of bounds
 	__syncthreads();
@@ -164,13 +160,6 @@ count_collisions_launch(int3 *vector, int size){
 		}
 
 		reduce<<<nBlocks, 1024, sizeof(int) * 1024, stream>>>(d_toReduce, d_reduced);
-
-/*
-		int res[nBlocks];
-		cudaMemcpy(res, d_reduced, sizeof(int) * nBlocks, cudaMemcpyDeviceToHost);
-		for(int i = 0; i < nBlocks; i++) printf("%d ", res[i]);
-		printf("\n\n");
-*/
 
 		// For the next run, vectors should be swapped
 		int *aux = d_reduced;

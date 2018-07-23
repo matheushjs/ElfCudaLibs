@@ -62,15 +62,6 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 	// Move our base index
 	baseIdx = baseIdx + 2048; // We could use modulus here, but doesn't seem necessary
 
-	/*
-	if(horizontalId == 0){
-		for(int i = 0; i < 2048; i++){
-			printf("%d ", sCoords[i].z);
-		}
-	}
-	__syncthreads();
-	*/
-
 	// Count collisions
 	int iterations = 0;
 	int offset = 1;
@@ -188,13 +179,6 @@ count_collisions_launch(int3 *vector, int size){
 	// Finally launch kernels
 	count_collisions_cu<<<nBlocks, nThreads, nShMem, stream>>>(d_vector, d_result, size);
 	
-/*
-	int res[resultSize];
-	cudaMemcpy(res, d_result, sizeof(int) * resultSize, cudaMemcpyDeviceToHost);
-	for(int i = 0; i < resultSize; i++) printf("%d ", res[i]);
-	printf("\n\n");
-*/
-
 	// Reduce the result vector
 	nBlocks = resultSize/1024;
 	int workSize = resultSize;
@@ -207,13 +191,6 @@ count_collisions_launch(int3 *vector, int size){
 		}
 
 		reduce<<<nBlocks, 1024, sizeof(int) * 1024, stream>>>(d_toReduce, d_reduced);
-
-/*
-		int res[nBlocks];
-		cudaMemcpy(res, d_reduced, sizeof(int) * nBlocks, cudaMemcpyDeviceToHost);
-		for(int i = 0; i < nBlocks; i++) printf("%d ", res[i]);
-		printf("\n\n");
-*/
 
 		// For the next run, vectors should be swapped
 		int *aux = d_reduced;
@@ -235,11 +212,6 @@ count_collisions_launch(int3 *vector, int size){
  *   it shouldn't be used anywhere after a call to this function.
  */
 int count_collisions_fetch(struct CollisionCountPromise promise){
-	/*
-	int result;
-	cudaMemcpy(&result, promise.d_result, sizeof(int), cudaMemcpyDeviceToHost);
-	*/
-
 	const int n = 1;
 	int result[n];
 	cudaMemcpy(&result, promise.d_reduced, sizeof(int) * n, cudaMemcpyDeviceToHost);
@@ -248,71 +220,4 @@ int count_collisions_fetch(struct CollisionCountPromise promise){
 	cudaFree(promise.d_reduced);
 
 	return result[0];
-}
-
-void test_reduce(){
-	/* We create a vector of size 2**X  */
-	const int SIZE = 4096;
-	int *vector = (int *) malloc(sizeof(int) * SIZE);
-	int i;
-
-	/* We fill it with 1..size */
-	for(i = 0; i < SIZE; i++){
-		vector[i] = i;
-	}
-
-	/* We reduce it sequentially */
-	int gold = 0;
-	for(i = 0; i < SIZE; i++)
-		gold += vector[i];
-
-	/* We send the vector to the cuda memory */
-	int *d_vector;
-	cudaMalloc(&d_vector, sizeof(int) * SIZE);
-	cudaMemcpy(d_vector, vector, sizeof(int) * SIZE, cudaMemcpyHostToDevice);
-
-	/* We create a vector for holding the result */
-	int *d_result;
-	cudaMalloc(&d_result, sizeof(int) * SIZE);
-	cudaMemset(d_result, 0, sizeof(int) * SIZE);
-
-	/* We reduce the vector in the GPU */
-	int workSize, nBlocks;
-	workSize = SIZE;
-	nBlocks = workSize/1024;
-	while(true){
-		reduce<<<nBlocks, 1024, sizeof(int) * 1024>>>(d_vector, d_result);
-
-		workSize = nBlocks;
-		nBlocks = workSize/1024;
-
-		int *aux = d_vector;
-		d_vector = d_result;
-		d_result = aux;
-
-		if(nBlocks == 0){
-			reduce<<<1, workSize, sizeof(int) * workSize>>>(d_vector, d_result);
-			break;
-		}
-	}
-
-	/* We get the result vector */
-	cudaMemcpy(vector, d_result, sizeof(int) * SIZE, cudaMemcpyDeviceToHost);
-
-	/* We print it */
-	for(i = 0; i < SIZE; i++){
-		printf("%5d ", vector[i]);
-	}
-
-	/* We check whether it was successful */
-	if(gold != vector[0]){
-		printf("Result is wrong, %d != %d!\n", gold, vector[0]);
-	} else {
-		printf("Result is correct! %d sum.\n", gold);
-	}
-
-	/* We free resources */
-	cudaFree(d_result);
-	cudaFree(d_vector);
-	free(vector);
 }
