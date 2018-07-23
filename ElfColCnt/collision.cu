@@ -263,7 +263,7 @@ int main(int argc, char *argv[]){
 			iters   = atoi(argv[2]);
 			break;
 		default:
-			fprintf(stderr, "Usage: %s [problem_size]\n", argv[0]);
+			fprintf(stderr, "Usage: %s [problem_size] [no. iterations]\n", argv[0]);
 			return 1;
 	}
 	
