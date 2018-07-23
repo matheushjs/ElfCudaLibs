@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "ElfColCnt.cuh"
+#include "utils.h"
 
 /* Multi-block reduce.
  * Accepts only vectors that are power of 2.
@@ -88,21 +89,6 @@ cudaStream_t get_next_stream(){
 
 	launches++;
 	return streams[launches%nStreams];
-}
-
-// Returns the first power of 2 that is >= 'base'.
-static inline
-int higherEqualPow2(int base){
-	int result = 1;
-	while(result < base) result <<= 1;
-	return result;
-}
-
-/* Divides 'dividend' by 'divisor', rounding up.
- */
-static inline
-int divisionCeil(int dividend, int divisor){
-	return (dividend + divisor - 1) / divisor;
 }
 
 /* Given a vector with 3D coordinates of points in the space,
