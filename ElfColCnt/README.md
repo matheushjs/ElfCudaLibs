@@ -159,6 +159,8 @@ The steps of the algorithm are:
 
 4. Create a *collision* variable initialized to 0;
 
-5. For each bead in the vector, take its position *x,y,z*, read the element *x,y,z* of the array in variable *K*, increment *collision* in *K-1* units.
+5. For each bead in the vector, take its position *x,y,z*, read the element *x,y,z* of the array in variable *K*, increment *collision* in *K-1* units;
+
+6. Divide *collision* by 2, obtaining the number of collisions among the beads.
 
 Each of the steps is *O(n)* so the whole procedure is also *O(n)*.
