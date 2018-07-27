@@ -210,10 +210,9 @@ int main(int argc, char *argv[]){
 
 	return 0;
 }
+```
 
 **NOTE: Most procedures will only work if the given vector of beads has an even number of elements!**
-
-```
 
 And to compile we can use the commands
 
