@@ -22,6 +22,8 @@ Index
 
 - [Sequential Linear](#sequential-linear)
 
+- [Usage](#usage)
+
 <a name="intro"></a>
 Introduction
 ---
@@ -164,3 +166,62 @@ The steps of the algorithm are:
 6. Divide *collision* by 2, obtaining the number of collisions among the beads.
 
 Each of the steps is *O(n)* so the whole procedure is also *O(n)*.
+
+
+<a name="usage"></a>
+Usage
+---
+
+Say you'd like to use the *HalfSteps_SingleRow* approach.
+
+First, copy in your development directory.
+
+```
+cp -r HalfSteps_SingleRow ~/my-project
+```
+
+Then your directory would be something like follows.
+
+```
+$ ls
+HalfSteps_SingleRow/  program.cu
+```
+
+The file `program.cu` would be something like
+
+```c
+#include <stdio.h>
+
+#include "HalfSteps_SingleRow/ElfColCnt.cuh"
+
+int main(int argc, char *argv[]){
+	int3 vector[] = {
+		{0, 0, 0},
+		{0, 0, 0},
+		{1, 1, 1},
+		{1, 1, 1}
+	};
+
+	struct CollisionCountPromise promise = count_collisions_launch(vector, 4);
+
+	int collisions = count_collisions_fetch(promise);
+
+	printf("Collisions: %d\n", collisions);
+
+	return 0;
+}
+
+```
+
+And to compile we can use the commands
+
+```
+nvcc program.cu HalfSteps_SingleRow/ElfColCnt.cu -o prog
+```
+
+And running the program would give
+
+```
+./prog
+Collisions: 2
+```
