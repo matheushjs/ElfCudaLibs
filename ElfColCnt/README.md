@@ -20,6 +20,7 @@ Index
 
 - [SingleSteps HalfThreads](#singlesteps-halfthreads)
 
+- [Sequential Linear](#sequential-linear)
 
 <a name="intro"></a>
 Introduction
@@ -133,3 +134,31 @@ What is left is to reflect over the main diagonal all those elements whose row i
 The implementation for this thread organization is more expensive and bothersome. Also, access to memory is less regular among threads in the same block, which impacts performance.
 
 Regarding memory usage, here there also isn't much space for using shared memory. Each thread reads both beads it needs in registers, performs the collision evaluation and then store the result in shared memory, which will be reduced into a single value and stored in global memory. In the end, the collisions in global memory are reduced to become one value that can be returned to the user.
+
+
+
+<a name="sequential-linear"></a>
+Sequential Linear
+---
+
+This is a sequential implementation with *O(n)* complexity. In this implementation we allocate a tri-dimensional array of *char*. The element *x,y,z* of this array should store how many beads there are in the position *x,y,z* in the tri-dimensional space. For this to work, we need:
+
+1. The allocated array must be big enough to cover all possible locations of the beads;
+
+2. The beads' coordinates must be integer values, i.e. the space where beads are located must be discrete.
+
+This implementation is motivated by the problem of Protein Structure Prediction, because some prediction algorithms model the protein as a set of connected beads whose coordinates are integers. Also, since the beads are connected, the space occupied by the protein is limited; that is, a protein with *N* beads can't exceed a space whose axes have dimensions of about *2 \* N*.
+
+The steps of the algorithm are:
+
+1. Allocate a tri-dimensional array of sufficient size;
+
+2. For each bead in the vector, take the bead position *x,y,z* and set the element *x,y,z* of the array to 0;
+
+3. For each bead in the vector, take its position *x,y,z* and increment the element *x,y,z* of the array in 1 unit;
+
+4. Create a *collision* variable initialized to 0;
+
+5. For each bead in the vector, take its position *x,y,z*, read the element *x,y,z* of the array in variable *K*, increment *collision* in *K-1* units.
+
+Each of the steps is *O(n)* so the whole procedure is also *O(n)*.
