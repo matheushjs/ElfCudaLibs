@@ -157,13 +157,13 @@ The steps of the algorithm are:
 
 2. For each bead in the vector, take the bead position *x,y,z* and set the element *x,y,z* of the array to 0;
 
-3. For each bead in the vector, take its position *x,y,z* and increment the element *x,y,z* of the array in 1 unit;
-
 4. Create a *collision* variable initialized to 0;
 
-5. For each bead in the vector, take its position *x,y,z*, read the element *x,y,z* of the array in variable *K*, increment *collision* in *K-1* units;
+5. For each bead in the vector, take its position *x,y,z*, read the element *x,y,z* of the array in variable *K*, then
 
-6. Divide *collision* by 2, obtaining the number of collisions among the beads.
+	1. increment *collision* in *K* units;
+
+	2. increment the element *x,y,z* of the array in 1 unit;
 
 Each of the steps is *O(n)* so the whole procedure is also *O(n)*.
 
@@ -210,6 +210,8 @@ int main(int argc, char *argv[]){
 
 	return 0;
 }
+
+**NOTE: Most procedures will only work if the given vector of beads has an even number of elements!**
 
 ```
 
