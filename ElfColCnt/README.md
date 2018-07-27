@@ -6,6 +6,20 @@ High-performance implementations for collision counting on discrete tridimension
 Index
 ---
 
+- [Introduction](#intro)
+
+- [NSteps SingleRow](#nsteps-singlerow)
+
+- [NSteps MultiRow](#nsteps-multirow)
+
+- [HalfSteps SingleRow](#halfsteps-singlerow)
+
+- [SingleSteps AllThreads](#singlesteps-allthreads)
+
+- [SingleSteps HalfThreads](#singlesteps-halfthreads)
+
+
+<a name="intro"></a>
 Introduction
 ---
 
@@ -27,6 +41,7 @@ where *vector* is an array of beads in the tri-dimensional integer space; that i
 In the following sections, each paralellization is explained in further detail.
 
 
+<a name="nsteps-singlerow"></a>
 NSteps SingleRow
 ---
 
@@ -41,7 +56,7 @@ To use the GPU memory efficiently, each thread reads in a register the element i
 The first thread among all threads launched has to compare bead *0* with all beads following it, giving a total of *N-1* operations. Hence, the depth of this algorithm is *N-1*, which explains the first part of this approach's name *NSteps*. It is also called *SingleRow* because the grid of blocks of threads is 1-dimensional.
 
 
-
+<a name="nsteps-multirow"></a>
 NSteps MultiRow
 ---
 
@@ -59,7 +74,7 @@ In our implementation, in the block *i,j* each thread reads its bead from segmen
 
 The depth of this implementation is 1024, because the thread that executes the most amount of sequential work are those threads in the *i \< j* blocks, where each thread compares its bead with all 1024 beads on the other segment. Also, the grid of blocks is bi-dimensional, meaning it has multiple rows, hence the *MultiRow* part of the name.
 
-
+<a name="halfsteps-singlerow"></a>
 HalfSteps SingleRow
 ---
 
@@ -73,7 +88,7 @@ The memory usage of our implementation is similar to that in Section *NSteps Sin
 
 This implementation has depth *s\* + 1 = N/2*, in the even *N* case, hence why the name of this implementation is *HalfSteps*. The grid of GPU blocks is uni-dimensional, which also explains the *SingleRow* portion.
 
-
+<a name="singlesteps-allthreads"></a>
 SingleSteps AllThreads
 ---
 
@@ -83,7 +98,7 @@ There isn't much space here for usage of shared memory. Each thread reads both b
 
 Similar to the *NSteps MultiRow* approach, half of the threads here are wasted, since threads *i,j* with *i \> j* should return immediately. This problem is solved with the next parallelization, at some cost, though.
 
-
+<a name="singlesteps-halfthreads"></a>
 SingleSteps HalfThreads
 ---
 
