@@ -44,7 +44,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 	int maxIterations = nCoords - baseIdx;
 	int horizontalId = threadIdx.x + blockIdx.x * blockDim.x;
 
-	// We read our element in a register
+	// We read our element in a register (surplus threads will read anything)
 	int3 buf = coords[horizontalId % nCoords];
 	
 	// Read the 2 blocks into shared memory (surplus threads read anything)
@@ -63,6 +63,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 	while(iterations < maxIterations){
 		
 		// horizontalId + iterations + 1 is the element we are comparing to
+		// Only the surplus threads will fail the condition.
 		if(horizontalId + iterations + 1 < nCoords){
 			collisions += (
 				buf.x == sCoords[threadIdx.x + offset].x
@@ -80,7 +81,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 			
 			// Rewrite older block with earlier block
 			sCoords[threadIdx.x] = sCoords[threadIdx.x + 1024];
-			// Read new block
+			// Read new block. Modulus prevents invallid memory accesses.
 			sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x) % nCoords ];
 
 			// We also have to sync here
@@ -91,8 +92,9 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 
 			offset = 1;
 		}
-
 	}
+
+	// Sync before reducing collisions on shared memory
 	__syncthreads();
 
 	// Fill shared memory with collisions (surplus threads are ignored)

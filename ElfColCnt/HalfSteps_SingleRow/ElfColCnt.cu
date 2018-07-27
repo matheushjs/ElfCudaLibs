@@ -55,10 +55,10 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int star){
 	// Move our base index
 	baseIdx = baseIdx + 2048; // We could use modulus here, but doesn't seem necessary
 
+	// Count collisions
 	int iterations = 0;
 	int collisions = 0;
 	int offset = 1;
-
 	while(iterations < star){
 		// Execute one iteration
 		collisions += (
@@ -105,6 +105,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int star){
 		iterations++;
 	}
 
+	// Sync before reducing collisions on shared memory
 	__syncthreads();
 
 	// Fill shared memory with collisions
