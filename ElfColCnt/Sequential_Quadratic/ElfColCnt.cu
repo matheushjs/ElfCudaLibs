@@ -1,9 +1,6 @@
 #include <stdio.h>
 
-/* Given a vector with 3D coordinates of points in the space,
- *   this function calculates the number of collisions among
- *   points.
- */
+/* Documented in header file */
 int count_collisions(int3 *vector, int size){
 	int i, j, collisions;
 

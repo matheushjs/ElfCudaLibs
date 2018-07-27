@@ -37,12 +37,6 @@ void reduce(int *vec, int *result){
  *   for j in i+1:N-1
  *     collisions += (bead[i] == bead[j])
  * by performing just the outer 'for' in parallel.
- *
- * Assumptions:
- *   - The grid of blocks has dimension HxW (height x width)
- *   - Horizontally, 'coords' is split  among each each block (not necessarily evenly), meaning each
- *       block is in charge of some number N of elements.
- *   - The amount of shared memory required is:  N * sizeof(int3)
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power){
@@ -50,7 +44,7 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int lower2Power
 	int threadBaseIdx = blockIdx.x * blockDim.x;              // Id of the first thread in our block
 	int horizontalId = blockIdx.x * blockDim.x + threadIdx.x; // Our horizontal ID
 	int blockBaseIdx = blockIdx.y * 2048; // Index in 'coords' where our datablock begins
-	int blockBaseEndx = min(blockBaseIdx + 2048, nCoords);   // Index in 'coords' where our datablock ends (exlusive)
+	int blockBaseEndx = min(blockBaseIdx + 2048, nCoords);    // Index in 'coords' where our datablock ends (exlusive)
 
 	// Get rid of unused blocks
 	if(threadBaseIdx >= blockBaseEndx) return;
@@ -145,7 +139,7 @@ count_collisions_launch(int3 *vector, int size){
 
 	// Prepare kernel launch parameters
 	const int elemInShmem = 2048; // 2048 allows 2 blocks to use the whole shared memory available.
-	dim3 dimBlock(1024, 1); // We allocate maximum number of threads per block.
+	dim3 dimBlock(1024, 1);       // We allocate maximum number of threads per block.
 	dim3 dimGrid(
 			divisionCeil(size, dimBlock.x), // Width depends on size / threadsPerBlock
 			divisionCeil(size, elemInShmem) // Height depends on size / elementsInShmemPerBlock

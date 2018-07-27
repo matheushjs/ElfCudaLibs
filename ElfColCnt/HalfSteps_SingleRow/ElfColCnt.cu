@@ -37,12 +37,6 @@ void reduce(int *vec, int *result){
  *   for j in i+1:N-1
  *     collisions += (bead[i] == bead[j])
  * by performing just the outer 'for' in parallel.
- *
- * TODO Assumptions:
- *   - The grid of blocks has dimension HxW (height x width)
- *   - Horizontally, 'coords' is split  among each each block (not necessarily evenly), meaning each
- *       block is in charge of some number N of elements.
- *   - The amount of shared memory required is:  N * sizeof(int3)
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords, int star){

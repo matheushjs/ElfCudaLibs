@@ -30,11 +30,12 @@ void reduce(int *vec, int *result){
 
 /*
  * Collision Count procedure implemented in CUDA.
- * 
- * Assumptions
- * - For now we assume threadsPerBlock is a power of 2.
- * 
- * Required shared memory: threadsPerBlock * sizeof(int)
+ *
+ * This procedure parallelizes the sequential algorithm:
+ * for i in 0:N-2
+ *   for j in i+1:N-1
+ *     collisions += (bead[i] == bead[j])
+ * by performing both 'for' loops in parallel.
  */
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
@@ -56,17 +57,15 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int N){
 	}
 
 	// Calculate collision
-	extern __shared__ int sdata[];
-	
 	int3 bead1 = coords[row];
 	int3 bead2 = coords[col+1];
-
 	int collision = (
 			bead1.x == bead2.x
 			& bead1.y == bead2.y
 			& bead1.z == bead2.z
 		);
 
+	extern __shared__ int sdata[];
 	sdata[threadIdx.x] = collision
 	                     * (tid < (N*N + N)/2); // thread out of bounds
 	__syncthreads();
