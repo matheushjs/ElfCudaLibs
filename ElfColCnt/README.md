@@ -100,7 +100,7 @@ Our problem in the previous paralellization was that we launched a whole *N \* N
 Following these steps, we would eventually end up with the following allocation of threads:
 
 | 0 |   |   | 7 |
-|-|
+|-|-|-|-|
 | 4 | 1 |   |   |
 | 8 | 5 | 2 |   |
 |   | 9 | 6 | 3 |
@@ -108,7 +108,7 @@ Following these steps, we would eventually end up with the following allocation 
 What is left is to reflect over the main diagonal all those elements whose row index is higher than the column index, giving:
 
 | 0 | 4 | 8 | 7 |
-|-|
+|-|-|-|-|
 |   | 1 | 5 | 9 |
 |   |   | 2 | 6 |
 |   |   |   | 3 |
