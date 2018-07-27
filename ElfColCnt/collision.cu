@@ -187,7 +187,7 @@ void t3(){
 	printf("Expected: %d\n", gold);
 	printf("Got:      %d\n", res);
 	free(vec);
-	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Then we create a vector where all elements are colliding
 	vec = sequential_vector(size);
@@ -199,7 +199,7 @@ void t3(){
 	printf("Expected: %d\n", gold);
 	printf("Got:      %d\n", res);
 	free(vec);
-	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Finally, no collisions at all
 	vec = sequential_vector(size);
@@ -208,7 +208,7 @@ void t3(){
 	printf("Expected: %d\n", gold);
 	printf("Got:      %d\n", res);
 	free(vec);
-	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Then we repeat the above, with vectors of more irregular size
 	size = 16 * 1024 + 220;
@@ -223,7 +223,7 @@ void t3(){
 	printf("Expected: %d\n", gold);
 	printf("Got:      %d\n", res);
 	free(vec);
-	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Then we create a vector where all elements are colliding
 	vec = sequential_vector(size);
@@ -235,7 +235,7 @@ void t3(){
 	printf("Expected: %d\n", gold);
 	printf("Got:      %d\n", res);
 	free(vec);
-	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
 
 	// Finally, no collisions at all
 	vec = sequential_vector(size);
@@ -244,7 +244,44 @@ void t3(){
 	printf("Expected: %d\n", gold);
 	printf("Got:      %d\n", res);
 	free(vec);
-	printf("%s\n\n\n", gold == res ? "SUCCESS!" : "FAILURE");
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
+
+
+	// Then we repeat the above, with a small vector
+	size = 220;
+
+	// First we create a vector where neighbors have collisions
+	vec = sequential_vector(size);
+	for(int i = 0; i < size; i += 2){
+		vec[i] = vec[i+1];
+	}
+	gold = size/2;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
+	free(vec);
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
+
+	// Then we create a vector where all elements are colliding
+	vec = sequential_vector(size);
+	for(int i = 0; i < size; i++){
+		vec[i] = vec[0];
+	}
+	gold = size * (size - 1) / 2;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
+	free(vec);
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
+
+	// Finally, no collisions at all
+	vec = sequential_vector(size);
+	gold = 0;
+	res = test_count(vec, size, 1);
+	printf("Expected: %d\n", gold);
+	printf("Got:      %d\n", res);
+	free(vec);
+	printf("Size %d: %s\n\n\n", size, gold == res ? "SUCCESS!" : "FAILURE");
 }
 
 
