@@ -24,6 +24,9 @@ Index
 
 - [Usage](#usage)
 
+- [Comparison](#comparison)
+
+
 <a name="intro"></a>
 Introduction
 ---
@@ -226,3 +229,20 @@ And running the program would give
 ./prog
 Collisions: 2
 ```
+
+
+<a name="comparison"></a>
+Comparison
+---
+
+Experiments were made to compare all the implementations. The single-step alternatives are very slow and easily exceed the maximum number of threads that can be launched, so they might be omitted. The experiments were done using an NVIDIA Tesla P100 and an Intel Xeon E5-2667v4.
+
+For big problem sizes, the linear approach can't be used because the memory required exceeds the system's capacity. Hence, only the parallel approaches are shown below.
+
+![](img/grid_results1.png)
+
+For some reason, yet to be analysed within the next few weeks, the multirow nsteps approach performs best.
+
+For small problem sizes, the linear approach is a valid candidate, and as can be seen below, it's the best one.
+
+![](img/batch4K_results1.png)
