@@ -41,57 +41,68 @@ void reduce(int *vec, int *result){
 __global__
 void count_collisions_cu(int3 *coords, int *result, int nCoords){
 	int baseIdx = blockIdx.x * 1024;
-	int maxIterations = nCoords - baseIdx;
 	int horizontalId = threadIdx.x + blockIdx.x * blockDim.x;
+
+	// Calculate number of iterations to execute
+	// If we have 2048 nCoords and baseIdx is 0, we must execute 2048 iterations.
+	int maxIterations = nCoords - baseIdx;
 
 	// We read our element in a register (surplus threads will read anything)
 	int3 buf = coords[horizontalId % nCoords];
 	
-	// Read the 2 blocks into shared memory (surplus threads read anything)
+	// Read the first block into shared memory (surplus threads read anything)
 	extern __shared__ int3 sCoords[];
 	sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
-	sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x + 1024) % nCoords ];
 	__syncthreads();
 
-	// Move our base index
-	baseIdx = baseIdx + 2048; // We could use modulus here, but doesn't seem necessary
-
-	// Count collisions
-	int iterations = 0;
-	int offset = 1;
+	// Count collisions on first block, which is a problematic block
+	int offset = 0;
 	int collisions = 0;
-	while(iterations < maxIterations){
-		
-		// horizontalId + iterations + 1 is the element we are comparing to
-		// Only the surplus threads will fail the condition.
-		if(horizontalId + iterations + 1 < nCoords){
-			collisions += (
-				buf.x == sCoords[threadIdx.x + offset].x
-				& buf.y == sCoords[threadIdx.x + offset].y
-				& buf.z == sCoords[threadIdx.x + offset].z
-			);
-		}
+	int iterations = 0;
+	int limit = min(1024, maxIterations);
+	for(; iterations < limit; iterations++){
+		// Check collision
+		int collision = (
+			buf.x   == sCoords[offset].x
+			& buf.y == sCoords[offset].y
+			& buf.z == sCoords[offset].z
+		);
+
+		// Assert our comparison element is after the base element in 'buf'
+		collision *= (baseIdx + offset > horizontalId);
+
+		// Sum on global collisions
+		collisions += collision;
+
 		offset++;
-		iterations++;
-		
-		// Change blocks in shared memory when needed
-		if(offset == 1025 && baseIdx < nCoords){
-			// Unfortunately we need to synchronize threads here
-			__syncthreads();
-			
-			// Rewrite older block with earlier block
-			sCoords[threadIdx.x] = sCoords[threadIdx.x + 1024];
-			// Read new block. Modulus prevents invallid memory accesses.
-			sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x) % nCoords ];
+	}
 
-			// We also have to sync here
-			__syncthreads();
-			
-			// Move base index
-			baseIdx += 1024;
+	baseIdx += 1024;
+	offset  = 0;
 
-			offset = 1;
+	// Now do the rest of the blocks
+	while(iterations < maxIterations){
+		// Read 2 blocks. Modulus prevents invallid memory accesses.
+		__syncthreads();
+		sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
+		sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x + 1024) % nCoords ];
+		__syncthreads();
+
+		// Do 2048 iterations, or maybe less
+		limit = min(iterations + 2048, maxIterations);
+		for(; iterations < limit; iterations++){
+			// Check collision
+			collisions += (
+				buf.x   == sCoords[offset].x
+				& buf.y == sCoords[offset].y
+				& buf.z == sCoords[offset].z
+			);
+
+			offset++;
 		}
+		
+		baseIdx += 2048;
+		offset  = 0;
 	}
 
 	// Sync before reducing collisions on shared memory
