@@ -60,33 +60,33 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords, int star){
 	int collisions = 0;
 	int offset = 1;
 	while(iterations < star){
-		// Execute one iteration
-		collisions += (
+		// Do 1024 iterations, or maybe less
+		int limit = min(iterations + 1024, star);
+		for(; iterations < limit; iterations++){
+			collisions += (
 				buf.x == sCoords[threadIdx.x + offset].x
 				& buf.y == sCoords[threadIdx.x + offset].y
 				& buf.z == sCoords[threadIdx.x + offset].z
 			);
-		offset++;
-		iterations++;
+			offset++;
+		}
 		
 		// Change blocks in shared memory when needed
-		if(offset == 1025){
-			// Unfortunately we need to synchronize threads here
-			__syncthreads();
-			
-			// Rewrite older block with earlier block
-			sCoords[threadIdx.x] = sCoords[threadIdx.x + 1024];
-			// Read new block
-			sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x) % nCoords ];
+		// Unfortunately we need to synchronize threads here
+		__syncthreads();
+		
+		// Rewrite older block with earlier block
+		sCoords[threadIdx.x] = sCoords[threadIdx.x + 1024];
+		// Read new block
+		sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x) % nCoords ];
 
-			// We also have to sync here
-			__syncthreads();
-			
-			// Move base index
-			baseIdx += 1024;
+		// We also have to sync here
+		__syncthreads();
+		
+		// Move base index
+		baseIdx += 1024;
 
-			offset = 1;
-		}
+		offset = 1;
 	}
 
 	// The vector has an even number of elements
