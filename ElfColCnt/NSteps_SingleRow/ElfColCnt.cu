@@ -50,37 +50,12 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 	// We read our element in a register (surplus threads will read anything)
 	int3 buf = coords[horizontalId % nCoords];
 	
-	// Read the first block into shared memory (surplus threads read anything)
 	extern __shared__ int3 sCoords[];
-	sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
-	__syncthreads();
 
-	// Count collisions on first block, which is a problematic block
 	int offset = 0;
 	int collisions = 0;
 	int iterations = 0;
 	int limit = min(1024, maxIterations);
-	for(; iterations < limit; iterations++){
-		// Check collision
-		int collision = (
-			buf.x   == sCoords[offset].x
-			& buf.y == sCoords[offset].y
-			& buf.z == sCoords[offset].z
-		);
-
-		// Assert our comparison element is after the base element in 'buf'
-		collision *= (baseIdx + offset > horizontalId);
-
-		// Sum on global collisions
-		collisions += collision;
-
-		offset++;
-	}
-
-	baseIdx += 1024;
-	offset  = 0;
-
-	// Now do the rest of the blocks
 	while(iterations < maxIterations){
 		// Read 2 blocks. Modulus prevents invallid memory accesses.
 		__syncthreads();
@@ -92,11 +67,12 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 		limit = min(iterations + 2048, maxIterations);
 		for(; iterations < limit; iterations++){
 			// Check collision
+			// Also assert our comparison element is after the base element in 'buf'
 			collisions += (
 				buf.x   == sCoords[offset].x
 				& buf.y == sCoords[offset].y
 				& buf.z == sCoords[offset].z
-			);
+			) * (baseIdx + offset > horizontalId);
 
 			offset++;
 		}
