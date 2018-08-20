@@ -50,35 +50,50 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 	// We read our element in a register (surplus threads will read anything)
 	int3 buf = coords[horizontalId % nCoords];
 	
+	// Read the 2 blocks into shared memory (surplus threads read anything)
 	extern __shared__ int3 sCoords[];
+	sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
+	sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x + 1024) % nCoords ];
+	__syncthreads();
 
-	int offset = 0;
-	int collisions = 0;
+	// Move our base index
+	baseIdx = baseIdx + 2048; // We could use modulus here, but doesn't seem necessary
+
+	// Count collisions
 	int iterations = 0;
-	int limit = min(1024, maxIterations);
+	int offset = 1;
+	int collisions = 0;
 	while(iterations < maxIterations){
-		// Read 2 blocks. Modulus prevents invallid memory accesses.
-		__syncthreads();
-		sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
-		sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x + 1024) % nCoords ];
-		__syncthreads();
+		// At this point of the code, the shared memory has 2048 elements
+		// The first thread has already compared with element 0 on previous round
 
-		// Do 2048 iterations, or maybe less
-		limit = min(iterations + 2048, maxIterations);
+		int limit = min(iterations + 1024, maxIterations);
 		for(; iterations < limit; iterations++){
-			// Check collision
-			// Also assert our comparison element is after the base element in 'buf'
+			// horizontalId + iterations + 1 is the element we are comparing to
 			collisions += (
-				buf.x   == sCoords[offset].x
-				& buf.y == sCoords[offset].y
-				& buf.z == sCoords[offset].z
-			) * (baseIdx + offset > horizontalId);
-
+				buf.x == sCoords[threadIdx.x + offset].x
+				& buf.y == sCoords[threadIdx.x + offset].y
+				& buf.z == sCoords[threadIdx.x + offset].z
+			) * (horizontalId + iterations + 1 < nCoords);
 			offset++;
 		}
 		
-		baseIdx += 2048;
-		offset  = 0;
+		// Change blocks in shared memory when needed
+		// Unfortunately we need to synchronize threads here
+		__syncthreads();
+		
+		// Rewrite older block with earlier block
+		sCoords[threadIdx.x] = sCoords[threadIdx.x + 1024];
+		// Read new block. Modulus prevents invallid memory accesses.
+		sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x) % nCoords ];
+
+		// We also have to sync here
+		__syncthreads();
+		
+		// Move base index
+		baseIdx += 1024;
+
+		offset = 1;
 	}
 
 	// Sync before reducing collisions on shared memory
