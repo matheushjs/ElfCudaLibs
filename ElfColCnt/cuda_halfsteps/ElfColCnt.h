@@ -12,6 +12,12 @@ typedef struct {
 	float z;
 } float3d;
 
+typedef struct {
+	int x;
+	int y;
+	int z;
+} int3d;
+
 /*
 Launches the GPU procedure for counting collisions in 'vector' which has size 'size'.
 

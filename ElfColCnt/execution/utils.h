@@ -1,23 +1,11 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+/*
+ * We don't need to declare int3d and float3d because all ElfColCnt.h declare them.
+ */
+
 #include <stdlib.h>
-
-#if SEQ_QUAD == 0 && SEQ_LIN == 0
-	typedef struct {
-		int x;
-		int y;
-		int z;
-	} int3d;
-#endif
-
-#if CUDA_HALF == 0 && CUDA_N == 0
-	typedef struct {
-		float x;
-		float y;
-		float z;
-	} float3d;
-#endif
 
 // Creates a vector whose beads follow each other along the vector (1,1,1)
 int3d *vector_seq(int size){

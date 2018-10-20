@@ -17,6 +17,12 @@ typedef struct {
 	int z;
 } int3d;
 
+typedef struct {
+	float x;
+	float y;
+	float z;
+} float3d;
+
 /*
 Calculates the number of collisions among the 'size' beads in 'vector'.
 
