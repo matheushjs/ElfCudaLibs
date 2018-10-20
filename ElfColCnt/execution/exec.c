@@ -42,11 +42,11 @@ void run(int vecSize, int iters){
 	// int iters = 10000;
 
 	#if SEQ_LIN == 1 || SEQ_QUAD == 1
-		int3d *vec = vector_rand(vecSize);
+		ElfInt3d *vec = vector_rand(vecSize);
 		test_count(vec, vecSize, iters);
 		free(vec);
 	#else
-		float3d *vec = vector_rand_f(vecSize);
+		ElfFloat3d *vec = vector_rand_f(vecSize);
 		test_count(vec, vecSize, iters);
 		free(vec);
 	#endif
@@ -63,13 +63,13 @@ void test(){
 
 	// Allocate the vectors we need
 	#if SEQ_QUAD == 1 || SEQ_LIN == 1
-		int3d *seq             = vector_seq(size);
-		int3d *neigh_paircolls = vector_neigh_paircolls(size);
-		int3d *rand_paircolls  = vector_rand_paircolls(size);
+		ElfInt3d *seq             = vector_seq(size);
+		ElfInt3d *neigh_paircolls = vector_neigh_paircolls(size);
+		ElfInt3d *rand_paircolls  = vector_rand_paircolls(size);
 	#else
-		float3d *seq             = vector_seq_f(size);
-		float3d *neigh_paircolls = vector_neigh_paircolls_f(size);
-		float3d *rand_paircolls  = vector_rand_paircolls_f(size);
+		ElfFloat3d *seq             = vector_seq_f(size);
+		ElfFloat3d *neigh_paircolls = vector_neigh_paircolls_f(size);
+		ElfFloat3d *rand_paircolls  = vector_rand_paircolls_f(size);
 	#endif
 
 	gold = 0;

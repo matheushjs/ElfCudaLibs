@@ -6,7 +6,7 @@
 #define COORD(X, Y, Z, AXIS) ( (Z+AXIS/2) * ((long int) AXIS*AXIS) + (Y+AXIS/2) * ((long int) AXIS) + (X+AXIS/2))
 
 /* Documented in header file */
-int count_collisions(int3d *vector, int size, AXISTYPE *space3d, int axisSize){
+int count_collisions(ElfInt3d *vector, int size, AXISTYPE *space3d, int axisSize){
 	int i, collisions;
 
 	collisions = 0;

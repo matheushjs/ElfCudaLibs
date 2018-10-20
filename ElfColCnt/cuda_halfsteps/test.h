@@ -4,7 +4,7 @@
 
 #include "ElfColCnt.h"
 
-int test_count(float3d *vector, int size, int iters){
+int test_count(ElfFloat3d *vector, int size, int iters){
 	struct CollisionCountPromise *promises;
 	promises = (struct CollisionCountPromise *) malloc(sizeof(struct CollisionCountPromise) * iters);
 

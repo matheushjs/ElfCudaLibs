@@ -158,7 +158,7 @@ cudaStream_t get_next_stream(){
  *   back from the device memory.
  */
 extern "C" struct CollisionCountPromise
-count_collisions_launch(float3d *vector, int size){
+count_collisions_launch(ElfFloat3d *vector, int size){
 	if(size%2 != 0){
 		fprintf(stderr, "Error: Vector size must be even.\n");
 		exit(1);

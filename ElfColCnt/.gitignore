@@ -1,7 +1,4 @@
-hs_sr
-ns_mr
-ns_sr
 seq_lin
 seq_quad
-ss_ht
-ss_at
+cuda_n
+cuda_half
