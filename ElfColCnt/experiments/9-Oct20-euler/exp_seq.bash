@@ -1,5 +1,5 @@
 #PBS -N ColCntSeq
-#PBS -l select=1:ngpus=1
+#PBS -l ncpus=1
 #PBS -l walltime=24:00:00
 #PBS -m abe
 #PBS -M matheus.saldanha@usp.br
