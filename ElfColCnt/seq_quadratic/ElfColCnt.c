@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "ElfColCnt.h"
+
 /* Documented in header file */
 int count_collisions(int3 *vector, int size){
 	int i, j, collisions;

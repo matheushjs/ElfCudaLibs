@@ -1,5 +1,5 @@
-#ifndef _ELF_COL_CNT_CUH_
-#define _ELF_COL_CNT_CUH_
+#ifndef _ELF_COL_CNT_H_
+#define _ELF_COL_CNT_H_
 
 /*
 This represents the type that will be used to hold the number of collisions
@@ -10,6 +10,12 @@ Setting it to 'char' saves memory, but limits the number of collisions in a sing
 Don't touch unless you are sure of what you're doing.
 */
 #define AXISTYPE char
+
+typedef struct {
+	int x;
+	int y;
+	int z;
+} int3;
 
 /*
 Calculates the number of collisions among the 'size' beads in 'vector'.
