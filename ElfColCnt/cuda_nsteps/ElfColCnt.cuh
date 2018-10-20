@@ -1,7 +1,7 @@
 #ifndef _ELF_COL_CNT_CUH_
 #define _ELF_COL_CNT_CUH_
 
-struct CollisionCountPromise {
+struct CollisionCountPromise {  // Vectors of # of collisions
 	int *d_toReduce;
 	int *d_reduced;
 };
@@ -14,7 +14,7 @@ It returns a "Promise" structure which represents a promise for a future return 
 The return value can be fetched with the _fetch corresponding function.
 */
 struct CollisionCountPromise
-	count_collisions_launch(int3 *vector, int size);
+	count_collisions_launch(float3 *vector, int size);
 
 /*
 Returns the number of collisions associated with the given "Promise" structure.

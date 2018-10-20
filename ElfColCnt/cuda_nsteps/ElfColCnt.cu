@@ -39,7 +39,7 @@ void reduce(int *vec, int *result){
  * by performing just the outer 'for' in parallel.
  */
 __global__
-void count_collisions_cu(int3 *coords, int *result, int nCoords){
+void count_collisions_cu(float3 *coords, int *result, int nCoords){
 	int baseIdx = blockIdx.x * 1024;
 	int horizontalId = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -48,10 +48,10 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 	int maxIterations = nCoords - baseIdx;
 
 	// We read our element in a register (surplus threads will read anything)
-	int3 buf = coords[horizontalId % nCoords];
+	float3 buf = coords[horizontalId % nCoords];
 	
 	// Read the 2 blocks into shared memory (surplus threads read anything)
-	extern __shared__ int3 sCoords[];
+	extern __shared__ float3 sCoords[];
 	sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
 	sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x + 1024) % nCoords ];
 	__syncthreads();
@@ -69,12 +69,20 @@ void count_collisions_cu(int3 *coords, int *result, int nCoords){
 
 		int limit = min(iterations + 1024, maxIterations);
 		for(; iterations < limit; iterations++){
+			// We want to check if sqrt( (Vx - Vy)(Vx - Vy) ) <= 1    Vx and Vy are float3 vectors
+			// Which is the same as      (Vx - Vy)(Vx - Vy)   <= 1    and the product is an inner product
+			// So we begin by taking the difference
+			float3 diff = make_float3(
+					buf.x - sCoords[threadIdx.x + offset].x,
+					buf.y - sCoords[threadIdx.x + offset].y,
+					buf.z - sCoords[threadIdx.x + offset].z
+				);
+
 			// horizontalId + iterations + 1 is the element we are comparing to
-			collisions += (
-				buf.x == sCoords[threadIdx.x + offset].x
-				& buf.y == sCoords[threadIdx.x + offset].y
-				& buf.z == sCoords[threadIdx.x + offset].z
-			) * (horizontalId + iterations + 1 < nCoords);
+			if(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z <= 1){
+				collisions += 1 * (horizontalId + iterations + 1 < nCoords);
+			}
+
 			offset++;
 		}
 		
@@ -148,25 +156,25 @@ cudaStream_t get_next_stream(){
  *   back from the device memory.
  */
 struct CollisionCountPromise
-count_collisions_launch(int3 *vector, int size){
+count_collisions_launch(float3 *vector, int size){
 	if(size%2 != 0){
 		fprintf(stderr, "Error: Vector size must be even.\n");
 		exit(1);
 	}
 
-	int3 *d_vector;
+	float3 *d_vector;
 	int *d_result;
 	cudaStream_t stream = get_next_stream();
 
 	// Allocate cuda vector for the 3D coordinates
-	cudaMalloc(&d_vector, sizeof(int3) * size);
-	cudaMemcpyAsync(d_vector, vector, sizeof(int3) * size, cudaMemcpyHostToDevice, stream);
+	cudaMalloc(&d_vector, sizeof(float3) * size);
+	cudaMemcpyAsync(d_vector, vector, sizeof(float3) * size, cudaMemcpyHostToDevice, stream);
 
 	// Prepare kernel launch parameters
 	const int elemInShmem = 2048; // 2048 because we need 2 blocks of 1024 elements in shmem.
 	int nThreads = 1024;          // We allocate maximum number of threads per block.
 	int nBlocks = divisionCeil(size, nThreads);
-	int nShMem = elemInShmem * sizeof(int3); // Shared memory required
+	int nShMem = elemInShmem * sizeof(float3); // Shared memory required
 
 	// Allocate cuda memory for the number of collisions
 	// This will also be used as a working vector for reducing among blocks
