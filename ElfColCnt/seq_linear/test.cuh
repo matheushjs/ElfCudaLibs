@@ -4,7 +4,7 @@
 
 #include "ElfColCnt.cuh"
 
-int test_count(int3 *vector, int size, int iters){
+int test_count(int3d *vector, int size, int iters){
 	int i, res;
 
 	int beg = clock();

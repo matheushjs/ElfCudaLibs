@@ -5,11 +5,11 @@ typedef struct {
 	int x;
 	int y;
 	int z;
-} int3;
+} int3d;
 
 /*
 Given a vector 'vector' with 'size' beads, returns the number of collisions among all beads.
 */
-int count_collisions(int3 *vector, int size);
+int count_collisions(int3d *vector, int size);
 
 #endif

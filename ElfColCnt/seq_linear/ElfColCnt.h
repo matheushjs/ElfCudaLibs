@@ -15,7 +15,7 @@ typedef struct {
 	int x;
 	int y;
 	int z;
-} int3;
+} int3d;
 
 /*
 Calculates the number of collisions among the 'size' beads in 'vector'.
@@ -28,6 +28,6 @@ This array should be big enough so that all beads in 'vector' have coordinates w
 'space3d' has 3 axes, each of which has size 'axisSize'.
 If 'axisSize' is 8, we assume each axis contains the values {-4, -3, -2, 1, 0, 1, 2, 3}
 */
-int count_collisions(int3 *vector, int size, AXISTYPE *space3d, int axisSize);
+int count_collisions(int3d *vector, int size, AXISTYPE *space3d, int axisSize);
 
 #endif
