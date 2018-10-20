@@ -12,15 +12,15 @@ Index
 
 - [NSteps SingleRow](#nsteps-singlerow)
 
-- [NSteps MultiRow](#nsteps-multirow)
-
 - [HalfSteps SingleRow](#halfsteps-singlerow)
 
-- [SingleSteps AllThreads](#singlesteps-allthreads)
-
-- [SingleSteps HalfThreads](#singlesteps-halfthreads)
-
 - [Sequential Linear](#sequential-linear)
+
+- [NSteps MultiRow (Discontinued)](#nsteps-multirow)
+
+- [SingleSteps AllThreads (Discontinued)](#singlesteps-allthreads)
+
+- [SingleSteps HalfThreads (Discontinued)](#singlesteps-halfthreads)
 
 - [Usage](#usage)
 
@@ -64,9 +64,55 @@ To use the GPU memory efficiently, each thread reads in a register the element i
 The first thread among all threads launched has to compare bead *0* with all beads following it, giving a total of *N-1* operations. Hence, the depth of this algorithm is *N-1*, which explains the first part of this approach's name *NSteps*. It is also called *SingleRow* because the grid of blocks of threads is 1-dimensional.
 
 
+<a name="halfsteps-singlerow"></a>
+HalfSteps SingleRow
+---
+
+This parallelization involves a change in the simple sequential algorithm shown previously. There, each bead is compared the all following beads, until the last bead is reached. Here, each bead is compared to the following beads, but when the end is reached we compare with the beads *0*, *1*, and so forth. In this fashion, each bead has to be compared with *s\** beads that follow, where *s\* = (N - 2) / 2*. There is one caveat, though, depending on the value of *N*, the number of beads in the vector:
+
+1. If *N* is odd, each bead is compared with *s\** beads that follows;
+
+2. If *N* is even, each bead is compared with *s\** beads that follows, and the **first half** of the beads must execute **1 more comparison**.
+
+The memory usage of our implementation is similar to that in Section *NSteps SingleRow*. The vector of *N* beads is divided in segments of 1024 beads, and we launch a block for each segment; block *i* will compare the beads of segment *i* with beads in the segments *i*, *i+1* and so forth. Each thread is responsible for one bead, which is read in a register, and the the segments are iteratively read in shared memory, which is used as a **cache for segments**. Initially, we read segments *i* and *i+1* into shared memory; when segment *i* is fully processed, we read segment *i+2* in its place.
+
+This implementation has depth *s\* + 1 = N/2*, in the even *N* case, hence why the name of this implementation is *HalfSteps*. The grid of GPU blocks is uni-dimensional, which also explains the *SingleRow* portion.
+
+
+<a name="sequential-linear"></a>
+Sequential Linear
+---
+
+This is a sequential implementation with *O(n)* complexity. In this implementation we allocate a tri-dimensional array of *char*. The element *x,y,z* of this array should store how many beads there are in the position *x,y,z* in the tri-dimensional space. For this to work, we need:
+
+1. The allocated array must be big enough to cover all possible locations of the beads;
+
+2. The beads' coordinates must be integer values, i.e. the space where beads are located must be discrete.
+
+This implementation is motivated by the problem of Protein Structure Prediction, because some prediction algorithms model the protein as a set of connected beads whose coordinates are integers. Also, since the beads are connected, the space occupied by the protein is limited; that is, a protein with *N* beads can't exceed a space whose axes have dimensions of about *2 \* N*.
+
+The steps of the algorithm are:
+
+1. Allocate a tri-dimensional array of sufficient size;
+
+2. For each bead in the vector, take the bead position *x,y,z* and set the element *x,y,z* of the array to 0;
+
+4. Create a *collision* variable initialized to 0;
+
+5. For each bead in the vector, take its position *x,y,z*, read the element *x,y,z* of the array in variable *K*, then
+
+	1. increment *collision* in *K* units;
+
+	2. increment the element *x,y,z* of the array in 1 unit;
+
+Each of the steps is *O(n)* so the whole procedure is also *O(n)*.
+
+
 <a name="nsteps-multirow"></a>
 NSteps MultiRow
 ---
+
+**This approach has been discontinued due to its lack of usefulness and, therefore, has been removed from the repository.**
 
 This implementation also parallelizes the outer *for* loop of the simple sequential algorithm presented earlier. What changes here is the parallel implementation, since 2 ways of implementing the same parallel description were glimpsed. In this version, the *vector* of beads is also divided in what we called segments in the previous section. However, here we launch *N \* N* GPU blocks in a way such that the block *i,j* compares the beads of segment *i* with the beads of segment *j*, as long as *j \>= i*.
 
@@ -82,23 +128,12 @@ In our implementation, in the block *i,j* each thread reads its bead from segmen
 
 The depth of this implementation is 1024, because the thread that executes the most amount of sequential work are those threads in the *i \< j* blocks, where each thread compares its bead with all 1024 beads on the other segment. Also, the grid of blocks is bi-dimensional, meaning it has multiple rows, hence the *MultiRow* part of the name.
 
-<a name="halfsteps-singlerow"></a>
-HalfSteps SingleRow
----
-
-This parallelization involves a change in the simple sequential algorithm shown previously. There, each bead is compared the all following beads, until the last bead is reached. Here, each bead is compared to the following beads, but when the end is reached we compare with the beads *0*, *1*, and so forth. In this fashion, each bead has to be compared with *s\** beads that follow, where *s\* = (N - 2) / 2*. There is one caveat, though, depending on the value of *N*, the number of beads in the vector:
-
-1. If *N* is odd, each bead is compared with *s\** beads that follows;
-
-2. If *N* is even, each bead is compared with *s\** beads that follows, and the **first half** of the beads must execute **1 more comparison**.
-
-The memory usage of our implementation is similar to that in Section *NSteps SingleRow*. The vector of *N* beads is divided in segments of 1024 beads, and we launch a block for each segment; block *i* will compare the beads of segment *i* with beads in the segments *i*, *i+1* and so forth. Each thread is responsible for one bead, which is read in a register, and the the segments are iteratively read in shared memory, which is used as a **cache for segments**. Initially, we read segments *i* and *i+1* into shared memory; when segment *i* is fully processed, we read segment *i+2* in its place.
-
-This implementation has depth *s\* + 1 = N/2*, in the even *N* case, hence why the name of this implementation is *HalfSteps*. The grid of GPU blocks is uni-dimensional, which also explains the *SingleRow* portion.
 
 <a name="singlesteps-allthreads"></a>
 SingleSteps AllThreads
 ---
+
+**This approach has been discontinued due to its lack of usefulness and, therefore, has been removed from the repository.**
 
 In this version, we parallelize both *for* loops in the simple sequential algorithm presented earlier. We basically launch *N \* N* threads organized as a *N x N* matrix, and each thread *i,j* evaluates the collision among the beads *i* and *j*. Each block of threads reduce the collisions evaluated by its threads and store it in global memory. Later, we reduce the collisions in global memory into a unique value.
 
@@ -109,6 +144,8 @@ Similar to the *NSteps MultiRow* approach, half of the threads here are wasted, 
 <a name="singlesteps-halfthreads"></a>
 SingleSteps HalfThreads
 ---
+
+**This approach has been discontinued due to its lack of usefulness and, therefore, has been removed from the repository.**
 
 Our problem in the previous paralellization was that we launched a whole *N \* N* grid of threads, when we only need *(N^2 - N) / 2*. To solve this, we launch *(N^2 - N) / 2* threads that map into positions of a matrix in the following fashion (consider a *4 x 4* matrix):
 
@@ -142,35 +179,6 @@ Regarding memory usage, here there also isn't much space for using shared memory
 
 
 
-<a name="sequential-linear"></a>
-Sequential Linear
----
-
-This is a sequential implementation with *O(n)* complexity. In this implementation we allocate a tri-dimensional array of *char*. The element *x,y,z* of this array should store how many beads there are in the position *x,y,z* in the tri-dimensional space. For this to work, we need:
-
-1. The allocated array must be big enough to cover all possible locations of the beads;
-
-2. The beads' coordinates must be integer values, i.e. the space where beads are located must be discrete.
-
-This implementation is motivated by the problem of Protein Structure Prediction, because some prediction algorithms model the protein as a set of connected beads whose coordinates are integers. Also, since the beads are connected, the space occupied by the protein is limited; that is, a protein with *N* beads can't exceed a space whose axes have dimensions of about *2 \* N*.
-
-The steps of the algorithm are:
-
-1. Allocate a tri-dimensional array of sufficient size;
-
-2. For each bead in the vector, take the bead position *x,y,z* and set the element *x,y,z* of the array to 0;
-
-4. Create a *collision* variable initialized to 0;
-
-5. For each bead in the vector, take its position *x,y,z*, read the element *x,y,z* of the array in variable *K*, then
-
-	1. increment *collision* in *K* units;
-
-	2. increment the element *x,y,z* of the array in 1 unit;
-
-Each of the steps is *O(n)* so the whole procedure is also *O(n)*.
-
-
 <a name="usage"></a>
 Usage
 ---
@@ -180,25 +188,25 @@ Say you'd like to use the *HalfSteps_SingleRow* approach.
 First, copy in your development directory.
 
 ```
-cp -r HalfSteps_SingleRow ~/my-project
+cp -r cuda_half ~/my-project
 ```
 
 Then your directory would be something like follows.
 
 ```
 $ ls
-HalfSteps_SingleRow/  program.cu
+cuda_halfsteps/  program.c
 ```
 
-The file `program.cu` would be something like
+The file `program.c` would be something like
 
 ```c
 #include <stdio.h>
 
-#include "HalfSteps_SingleRow/ElfColCnt.cuh"
+#include "cuda_halfsteps/ElfColCnt.h"
 
 int main(int argc, char *argv[]){
-	int3 vector[] = {
+	ElfFloat3d vector[] = {
 		{0, 0, 0},
 		{0, 0, 0},
 		{1, 1, 1},
@@ -220,7 +228,7 @@ int main(int argc, char *argv[]){
 And to compile we can use the commands
 
 ```
-nvcc program.cu HalfSteps_SingleRow/ElfColCnt.cu -o prog
+nvcc program.c cuda_halfsteps/ElfColCnt.cu -o prog
 ```
 
 And running the program would give
