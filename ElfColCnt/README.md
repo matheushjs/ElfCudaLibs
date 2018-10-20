@@ -35,16 +35,16 @@ In this directory, I provide a few procedures that count the number of collision
 
 The most basic sequential code is as follows
 ```c
-int collisions = 0;
+int interactions = 0;
 for(i = 0; i < vecSize-1; i++){
 	for(j = i+1; j < vecSize; j++){
-		isEqual(vector[i], vector[j]){
-			collisions += 1;
+		interacts(vector[i], vector[j]){
+			interacts += 1;
 		}
 	}
 }
 ```
-where *vector* is an array of beads in the tri-dimensional integer space; that is, each element in the vector is a structure containing 3 integers, one for each coordinate on each axis.
+where *vector* is an array of beads in the tri-dimensional space; that is, each element in the vector is a structure containing 3 numbers (integer or real), one for each coordinate on each axis. `interacts` is any predicate that receives 2 beads as argument; however, not all predicates will work with the Sequential_Linear approach explained later.
 
 In the following sections, each paralellization is explained in further detail.
 
