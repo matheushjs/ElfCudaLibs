@@ -1,4 +1,4 @@
-#PBS -N ColCntGpuBig
+#PBS -N ColCntSeq
 #PBS -l select=1:ngpus=1
 #PBS -l walltime=24:00:00
 #PBS -m abe
