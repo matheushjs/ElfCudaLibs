@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "ElfColCnt.cuh"
+extern "C" {
+	#include "ElfColCnt.h"
+}
 #include "utils.h"
 
 /* Multi-block reduce.
@@ -155,8 +157,8 @@ cudaStream_t get_next_stream(){
  *   structure that can later be used to fetch the result
  *   back from the device memory.
  */
-struct CollisionCountPromise
-count_collisions_launch(float3 *vector, int size){
+extern "C" struct CollisionCountPromise
+count_collisions_launch(float3d *vector, int size){
 	if(size%2 != 0){
 		fprintf(stderr, "Error: Vector size must be even.\n");
 		exit(1);
@@ -217,7 +219,7 @@ count_collisions_launch(float3 *vector, int size){
  * The pointers within the promise structure are freed, so
  *   it shouldn't be used anywhere after a call to this function.
  */
-int count_collisions_fetch(struct CollisionCountPromise promise){
+extern "C" int count_collisions_fetch(struct CollisionCountPromise promise){
 	const int n = 1;
 	int result[n];
 	cudaMemcpy(&result, promise.d_reduced, sizeof(int) * n, cudaMemcpyDeviceToHost);

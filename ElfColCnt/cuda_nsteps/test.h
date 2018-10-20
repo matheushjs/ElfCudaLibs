@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "ElfColCnt.cuh"
+#include "ElfColCnt.h"
 
-int test_count(float3 *vector, int size, int iters){
+int test_count(float3d *vector, int size, int iters){
 	struct CollisionCountPromise *promises;
 	promises = (struct CollisionCountPromise *) malloc(sizeof(struct CollisionCountPromise) * iters);
 
@@ -20,7 +20,7 @@ int test_count(float3 *vector, int size, int iters){
 	}
 
 	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
-	printf("Collisions [Half Steps Grid Singlerow]: %d\n", res);
+	printf("Collisions [N Steps Grid 1Row]: %d\n", res);
 
 	return res;
 }

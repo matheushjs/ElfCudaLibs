@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "ElfColCnt.cuh"
+#include "ElfColCnt.h"
 
 int test_count(int3d *vector, int size, int iters){
 	int i, res;

@@ -6,6 +6,12 @@ struct CollisionCountPromise {  // Vectors of # of collisions
 	int *d_reduced;
 };
 
+typedef struct {
+	float x;
+	float y;
+	float z;
+} float3d;
+
 /*
 Launches the GPU procedure for counting collisions in 'vector' which has size 'size'.
 
@@ -14,7 +20,7 @@ It returns a "Promise" structure which represents a promise for a future return 
 The return value can be fetched with the _fetch corresponding function.
 */
 struct CollisionCountPromise
-	count_collisions_launch(float3 *vector, int size);
+	count_collisions_launch(float3d *vector, int size);
 
 /*
 Returns the number of collisions associated with the given "Promise" structure.

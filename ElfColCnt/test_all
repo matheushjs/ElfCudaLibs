@@ -3,25 +3,17 @@
 make test
 
 echo "HalfSteps SingleRow"
-./hs_sr | grep -e SUCCESS -e FAILURE
-echo
-
-echo "NSteps MultiRow"
-./ns_mr | grep -e SUCCESS -e FAILURE
+./cuda_half | grep -e SUCCESS -e FAILURE
 echo
 
 echo "NSteps SingleRow"
-./ns_sr | grep -e SUCCESS -e FAILURE
+./cuda_n | grep -e SUCCESS -e FAILURE
 echo
 
 echo "Sequential Quadratic"
 ./seq_quad | grep -e SUCCESS -e FAILURE
 echo
 
-echo "SingleSteps AllThreads"
-./ss_at | grep -e SUCCESS -e FAILURE
-echo
-
-echo "SingleSteps HalfThreads"
-./ss_ht | grep -e SUCCESS -e FAILURE
+echo "Sequential Linear"
+./seq_lin | grep -e SUCCESS -e FAILURE
 echo
