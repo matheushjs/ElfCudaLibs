@@ -40,11 +40,22 @@
 void run(int vecSize, int iters){
 	// int vecSize = 1000;
 	// int iters = 10000;
+	int i;
 
-	#if SEQ_LIN == 1 || SEQ_QUAD == 1
-		ElfInt3d *vec = vector_rand(vecSize);
-		test_count(vec, vecSize, iters);
-		free(vec);
+	// For the sequential versions, we take care to to abuse of cache.
+	#if SEQ_LIN == 1
+		for(i = 0; i < iters; i++){
+			ElfInt3d *vec = vector_rand(vecSize);  // Create a new random vector
+			test_count(vec, vecSize, 1);           // Count collisions for it
+			free(vec);                             // Free vector
+		}
+		test_count(NULL, -1, -1);                  // Sinalize to the test_count() to free inner global resources
+	#elif SEQ_QUAD == 1
+		for(i = 0; i < iters; i++){
+			ElfInt3d *vec = vector_rand(vecSize);  // Create a new random vector
+			test_count(vec, vecSize, 1);           // Count collisions for it
+			free(vec);                             // Free vector
+		}
 	#else
 		ElfFloat3d *vec = vector_rand_f(vecSize);
 		test_count(vec, vecSize, iters);
