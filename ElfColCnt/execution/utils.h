@@ -56,6 +56,39 @@ ElfInt3d *vector_neigh_paircolls(int size){
 	return result;
 }
 
+// Creates a vector in a similar way to how we generate proteins
+ElfInt3d *vector_protein(int size){
+	int i;
+	ElfInt3d *result = (ElfInt3d *) malloc(sizeof(ElfInt3d) * size);
+
+	result[0].x = 0;
+	result[0].y = 0;
+	result[0].z = 0;
+	result[1].x = 1;
+	result[1].y = 0;
+	result[1].z = 0;
+
+	for(i = 2; i < size; i++){
+		// First set current bead equal to the previous one
+		result[i].x = result[i-1].x;
+		result[i].y = result[i-1].y;
+		result[i].z = result[i-1].z;
+
+		// Then move accordingly
+		switch(rand()%6){
+		case 0: result[i].x += 1; break;
+		case 1: result[i].x -= 1; break;
+		case 2: result[i].y += 1; break;
+		case 3: result[i].y -= 1; break;
+		case 4: result[i].z += 1; break;
+		case 5: result[i].z -= 1; break;
+		default: break;
+		}
+	}
+
+	return result;
+}
+
 // Creates a vector where each bead collides with 1 other bead
 // The bead positions are randomized
 ElfInt3d *vector_rand_paircolls(int size){

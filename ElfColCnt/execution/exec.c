@@ -48,7 +48,7 @@ void run(int vecSize, int iters){
 		int beg = clock();
 		int res = 0;
 		for(i = 0; i < iters; i++){
-			ElfInt3d *vec = vector_seq(vecSize);   // Create a new random vector
+			ElfInt3d *vec = vector_protein(vecSize);   // Create a new random vector
 			res = test_count(vec, vecSize, 1);     // Count collisions for it
 			free(vec);                             // Free vector
 		}
@@ -59,7 +59,7 @@ void run(int vecSize, int iters){
 		int beg = clock();
 		int res = 0;
 		for(i = 0; i < iters; i++){
-			ElfInt3d *vec = vector_seq(vecSize);   // Create a new random vector
+			ElfInt3d *vec = vector_protein(vecSize);   // Create a new random vector
 			res = test_count(vec, vecSize, 1);     // Count collisions for it
 			free(vec);                             // Free vector
 		}
