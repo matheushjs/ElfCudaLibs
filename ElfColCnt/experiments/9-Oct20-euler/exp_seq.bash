@@ -20,7 +20,7 @@ for progName in $binaries; do
 	beg=64;
 	inc=64;
 	end=$((1024*8));
-	iterations=100;
+	iterations=1000;
 
 	echo "Begins at $beg and ends at $end" 1>&2;
 
