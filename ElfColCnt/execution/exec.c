@@ -128,7 +128,9 @@ void test(){
 	free(neigh_paircolls);
 	free(rand_paircolls);
 
+#if SEQ_LIN == 1
 small:
+#endif
 
 	// Then we repeat the above, with a small vector
 	size = 220;

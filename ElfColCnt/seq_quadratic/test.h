@@ -5,7 +5,7 @@
 #include "ElfColCnt.h"
 
 int test_count(ElfInt3d *vector, int size, int iters){
-	int i, res;
+	int i, res = 0;
 
 	int beg = clock();
 	for(i = 0; i < iters; i++){
