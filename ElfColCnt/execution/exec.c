@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 /*
  * MACROS for building programs BUILD_TEST mode or 'run' mode
@@ -44,18 +45,26 @@ void run(int vecSize, int iters){
 
 	// For the sequential versions, we take care to to abuse of cache.
 	#if SEQ_LIN == 1
+		int beg = clock();
+		int res = 0;
 		for(i = 0; i < iters; i++){
-			ElfInt3d *vec = vector_rand(vecSize);  // Create a new random vector
-			test_count(vec, vecSize, 1);           // Count collisions for it
+			ElfInt3d *vec = vector_seq(vecSize);   // Create a new random vector
+			res = test_count(vec, vecSize, 1);     // Count collisions for it
 			free(vec);                             // Free vector
 		}
 		test_count(NULL, -1, -1);                  // Sinalize to the test_count() to free inner global resources
+		printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
+		printf("Collisions [Linear]: %d\n", res);
 	#elif SEQ_QUAD == 1
+		int beg = clock();
+		int res = 0;
 		for(i = 0; i < iters; i++){
-			ElfInt3d *vec = vector_rand(vecSize);  // Create a new random vector
-			test_count(vec, vecSize, 1);           // Count collisions for it
+			ElfInt3d *vec = vector_seq(vecSize);   // Create a new random vector
+			res = test_count(vec, vecSize, 1);     // Count collisions for it
 			free(vec);                             // Free vector
 		}
+		printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
+		printf("Collisions [Quadratic]: %d\n", res);
 	#else
 		ElfFloat3d *vec = vector_rand_f(vecSize);
 		test_count(vec, vecSize, iters);
