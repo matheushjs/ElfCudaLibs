@@ -15,31 +15,19 @@ binaries="seq_quad seq_lin";
 make $binaries;
 
 for progName in $binaries; do
-	echo "psize,execid,elapsed" > $progName.out;
-
-	beg=64;
-	inc=64;
-	end=$((1024*8));
-	outerIters=10; # program executions
+	beg=1024;
+	inc=1024;
+	end=$((1024*2));
+	outerIters=5; # program executions
 	intraIters=1000; # iterations within the program
-
-	echo "Begins at $beg and ends at $end" 1>&2;
 
 	for problemSize in $(seq $beg $inc $end); do
 		# Do some warmup runs
 		./$progName $problemSize 5 &> /dev/null;
 
 		for i in $(seq $outerIters); do
-			# Echo progress onto stderr
-			echo $profName $problemSize $executionId 1>&2;
-
 			# Run code
-			output=$( ./$progName $problemSize $intraIters | grep Elapsed );
-
-			# Ouput as csv
-			echo -n ${problemSize},;
-			echo -n ${i},;
-			echo $output | cut -f2 -d' ';
+			/usr/bin/time -v ./$progName $problemSize $intraIters > /dev/null;
 		done;
-	done >> $progName.out;
+	done &> swap_$progName.out;
 done;
