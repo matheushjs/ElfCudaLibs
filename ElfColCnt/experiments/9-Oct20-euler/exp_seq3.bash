@@ -25,6 +25,7 @@ for progName in $binaries; do
 
 	echo "Begins at $beg and ends at $end" 1>&2;
 
+	export TIMEFORMAT="real: %E";
 	for problemSize in $(seq $beg $inc $end); do
 		# Do some warmup runs
 		./$progName $problemSize 5 &> /dev/null;
@@ -34,12 +35,12 @@ for progName in $binaries; do
 			echo $profName $problemSize $executionId 1>&2;
 
 			# Run code
-			output=$( ./$progName $problemSize $intraIters | grep Elapsed );
+			output=$( { time ./$progName $problemSize $intraIters; } 2>&1 | grep real );
 
 			# Ouput as csv
 			echo -n ${problemSize},;
 			echo -n ${i},;
 			echo $output | cut -f2 -d' ';
 		done;
-	done >> second_$progName.out;
+	done >> $progName.out;
 done;
