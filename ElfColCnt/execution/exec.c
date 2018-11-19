@@ -43,10 +43,13 @@ void run(int vecSize, int iters){
 	// int iters = 10000;
 	int i;
 
+	srand(72);
+
 	// For the sequential versions, we take care to to abuse of cache.
 	#if SEQ_LIN == 1
 		int beg = clock();
 		int res = 0;
+
 		for(i = 0; i < iters; i++){
 			ElfInt3d *vec = vector_protein(vecSize);   // Create a new random vector
 			res = test_count(vec, vecSize, 1);     // Count collisions for it
