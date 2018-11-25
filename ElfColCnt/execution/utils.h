@@ -6,6 +6,8 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
+#include "rnorm.h"
 
 // Creates a vector whose beads follow each other along the vector (1,1,1)
 ElfInt3d *vector_seq(int size){
@@ -21,7 +23,7 @@ ElfInt3d *vector_seq(int size){
 	return result;
 }
 
-// Creates a vector whose beads are in random coordinates
+// Creates a vector whose beads are in uniformly random coordinates
 ElfInt3d *vector_rand(int size){
 	int i;
 	ElfInt3d *result = (ElfInt3d *) malloc(sizeof(ElfInt3d) * size);
@@ -34,6 +36,32 @@ ElfInt3d *vector_rand(int size){
 
 	return result;
 }
+
+// Creates a vector whose beads are in normally random coordinates
+// Bead coordinates are in interval [-lim, lim]
+// The normal distribution has mean 0 and standard deviation 'std'
+ElfInt3d *vector_rnorm(int size, int lim, double std){
+	int i;
+	ElfInt3d *result = (ElfInt3d *) malloc(sizeof(ElfInt3d) * size);
+	
+	// Get the normal numbers
+	double *xnorm = rnorm(size);
+	double *ynorm = rnorm(size);
+	double *znorm = rnorm(size);
+
+	// Make them have standard deviation 'std'
+	for(i = 0; i < size; i++) xnorm[i] *= std;
+	for(i = 0; i < size; i++) ynorm[i] *= std;
+	for(i = 0; i < size; i++) znorm[i] *= std;
+
+	//  Limit numbers to integers in range [-lim, lim]
+	for(i = 0; i < size; i++) result[i].x = (int) fmax(-lim, fmin(lim, xnorm[i]));
+	for(i = 0; i < size; i++) result[i].y = (int) fmax(-lim, fmin(lim, xnorm[i]));
+	for(i = 0; i < size; i++) result[i].z = (int) fmax(-lim, fmin(lim, xnorm[i]));
+
+	return result;
+}
+
 
 // Creates a vector where each bead collides with 1 other bead
 // The colliding beads are neighbors in the vector

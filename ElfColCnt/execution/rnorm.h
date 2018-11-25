@@ -28,7 +28,7 @@
 double *rnorm(int n){
     int i;
     int m = n + n % 2;
-    double* values = (double*) calloc(m, sizeof(double));
+    double* values = (double*) malloc(m * sizeof(double));
     double average, deviation;
 
     if(values){
