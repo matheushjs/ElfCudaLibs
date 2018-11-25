@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 
 /*
  * MACROS for building programs BUILD_TEST mode or 'run' mode
@@ -38,7 +39,7 @@
 // Utilities for creating vectors and tests
 #include "utils.h"
 
-void run(int vecSize, int iters, double std){
+void run(int vecSize, int iters, double std, int rrate){
 	// int vecSize = 1000;
 	// int iters = 10000;
 	int i;
@@ -51,10 +52,14 @@ void run(int vecSize, int iters, double std){
 		int res = 0;
 
 		for(i = 0; i < iters; i++){
+			if(i%rrate == 0){
+				// Force reallocation of the space3d array
+				test_count(NULL, -1, -1);
+			}
 			// ElfInt3d *vec = vector_protein(vecSize);   // Create a new random vector
 			ElfInt3d *vec = vector_rnorm(vecSize, vecSize, std);   // Create a new random vector
 			res = test_count(vec, vecSize, 1);     // Count collisions for it
-			free(vec);                             // Free vector
+			free(vec);                                    // Free vector
 		}
 		test_count(NULL, -1, -1);                  // Sinalize to the test_count() to free inner global resources
 		printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
@@ -180,7 +185,8 @@ small:
 int main(int argc, char *argv[]){
 	int vecSize = 32 * 16 * 1024;
 	int iters   = 1;
-	double std     = 1;
+	double std  = 1;
+	int rrate   = INT_MAX;
 	
 	switch(argc){
 		case 1:
@@ -197,15 +203,21 @@ int main(int argc, char *argv[]){
 			iters   = atoi(argv[2]);
 			std     = atof(argv[3]);
 			break;
+		case 5:
+			vecSize = atoi(argv[1]);
+			iters   = atoi(argv[2]);
+			std     = atof(argv[3]);
+			rrate   = atoi(argv[4]);
+			break;
 		default:
-			fprintf(stderr, "Usage: %s [problem_size] [no. iterations] [std deviation]\n", argv[0]);
+			fprintf(stderr, "Usage: %s [problem_size] [no. iterations] [std deviation]i [realloc_rate]\n", argv[0]);
 			return 1;
 	}
 	
 #if BUILD_TEST == 1
 	test();
 #else
-	run(vecSize, iters, std);
+	run(vecSize, iters, std, rrate);
 #endif
 
 	return 0;
