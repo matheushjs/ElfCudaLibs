@@ -29,7 +29,10 @@ double *rnorm(int n){
     int i;
     int m = n + n % 2;
     double* values = (double*) malloc(m * sizeof(double));
-    double average, deviation;
+    static int counter = 1;
+
+    srand(time(NULL) + counter);
+    counter++;
 
     if(values){
         for(i = 0; i < m; i += 2){

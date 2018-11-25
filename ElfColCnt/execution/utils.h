@@ -59,6 +59,9 @@ ElfInt3d *vector_rnorm(int size, int lim, double std){
 	for(i = 0; i < size; i++) result[i].y = (int) fmax(-lim, fmin(lim, xnorm[i]));
 	for(i = 0; i < size; i++) result[i].z = (int) fmax(-lim, fmin(lim, xnorm[i]));
 
+	for(i = 0; i < size; i++) printf("%d ", result[i].x);
+	printf("\n");
+
 	return result;
 }
 

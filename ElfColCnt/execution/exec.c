@@ -38,7 +38,7 @@
 // Utilities for creating vectors and tests
 #include "utils.h"
 
-void run(int vecSize, int iters){
+void run(int vecSize, int iters, double std){
 	// int vecSize = 1000;
 	// int iters = 10000;
 	int i;
@@ -51,7 +51,8 @@ void run(int vecSize, int iters){
 		int res = 0;
 
 		for(i = 0; i < iters; i++){
-			ElfInt3d *vec = vector_protein(vecSize);   // Create a new random vector
+			// ElfInt3d *vec = vector_protein(vecSize);   // Create a new random vector
+			ElfInt3d *vec = vector_rnorm(vecSize, vecSize, std);   // Create a new random vector
 			res = test_count(vec, vecSize, 1);     // Count collisions for it
 			free(vec);                             // Free vector
 		}
@@ -62,7 +63,8 @@ void run(int vecSize, int iters){
 		int beg = clock();
 		int res = 0;
 		for(i = 0; i < iters; i++){
-			ElfInt3d *vec = vector_protein(vecSize);   // Create a new random vector
+			// ElfInt3d *vec = vector_protein(vecSize);   // Create a new random vector
+			ElfInt3d *vec = vector_rnorm(vecSize, vecSize, std);   // Create a new random vector
 			res = test_count(vec, vecSize, 1);     // Count collisions for it
 			free(vec);                             // Free vector
 		}
@@ -178,6 +180,7 @@ small:
 int main(int argc, char *argv[]){
 	int vecSize = 32 * 16 * 1024;
 	int iters   = 1;
+	double std     = 1;
 	
 	switch(argc){
 		case 1:
@@ -189,15 +192,20 @@ int main(int argc, char *argv[]){
 			vecSize = atoi(argv[1]);
 			iters   = atoi(argv[2]);
 			break;
+		case 4:
+			vecSize = atoi(argv[1]);
+			iters   = atoi(argv[2]);
+			std     = atof(argv[3]);
+			break;
 		default:
-			fprintf(stderr, "Usage: %s [problem_size] [no. iterations]\n", argv[0]);
+			fprintf(stderr, "Usage: %s [problem_size] [no. iterations] [std deviation]\n", argv[0]);
 			return 1;
 	}
 	
 #if BUILD_TEST == 1
 	test();
 #else
-	run(vecSize, iters);
+	run(vecSize, iters, std);
 #endif
 
 	return 0;
