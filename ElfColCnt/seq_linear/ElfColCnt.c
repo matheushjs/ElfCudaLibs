@@ -20,9 +20,8 @@ int count_collisions(ElfInt3d *vector, int size, AXISTYPE *space3d, int axisSize
 	// Place beads in the space (actually calculate the collisions at the same time)
 	for(i = 0; i < size; i++){
 		long int idx = COORD3D(vector[i], axisSize);
-		if(space3d[idx]){
-			collisions += space3d[idx];
-		}
+		int beadCount = space3d[idx];
+		collisions += beadCount;
 		space3d[idx]++;
 	}
 

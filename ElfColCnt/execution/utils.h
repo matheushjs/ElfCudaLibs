@@ -56,11 +56,10 @@ ElfInt3d *vector_rnorm(int size, int lim, double std){
 
 	//  Limit numbers to integers in range [-lim, lim]
 	for(i = 0; i < size; i++) result[i].x = (int) fmax(-lim, fmin(lim, xnorm[i]));
-	for(i = 0; i < size; i++) result[i].y = (int) fmax(-lim, fmin(lim, xnorm[i]));
-	for(i = 0; i < size; i++) result[i].z = (int) fmax(-lim, fmin(lim, xnorm[i]));
+	for(i = 0; i < size; i++) result[i].y = (int) fmax(-lim, fmin(lim, ynorm[i]));
+	for(i = 0; i < size; i++) result[i].z = (int) fmax(-lim, fmin(lim, znorm[i]));
 
-	for(i = 0; i < size; i++) printf("%d ", result[i].x);
-	printf("\n");
+	// for(i = 0; i < size; i++) printf("%d %d %d\n", result[i].x, result[i].y, result[i].z);
 
 	return result;
 }
