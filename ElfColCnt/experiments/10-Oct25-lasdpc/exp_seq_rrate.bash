@@ -3,7 +3,7 @@ binaries="seq_lin";
 make $binaries 1>&2;
 
 outerIters=100;     # Program executions
-intraIters=20000;   # Iterations within the program
+intraIters=13000;   # Iterations within the program
 
 # Warmup runs
 ./seq_lin 1960 100 750 &> /dev/null;
@@ -11,10 +11,10 @@ intraIters=20000;   # Iterations within the program
 
 # Experiment with seq_lin
 echo execid,rrate,elapsed
-for rrate in 1000000 10000 7500 5000 2500 1000 500; do
+for rrate in 500 1000 2500 5000 7500 10000 1000000; do
 	for i in $(seq $outerIters); do
-		output=$( ./seq_lin 1960 $intraIters 750 $rrate | grep Elapsed);
+		output=$( /usr/bin/time -f "%e" ./seq_lin 1960 $intraIters 750 $rrate 2>&1 | tail -1 );
 		echo -n $i,$rrate,
-		echo $output | cut -f 2 -d' ';
+		echo $output;
 	done;
 done;
