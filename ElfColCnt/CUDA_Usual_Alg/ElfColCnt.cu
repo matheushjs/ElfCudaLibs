@@ -5,7 +5,7 @@
 extern "C" {
 	#include "ElfColCnt.h"
 }
-#include "utils.h"
+#include <utils.h>
 
 /* Multi-block reduce.
  * Accepts only vectors that are power of 2.
