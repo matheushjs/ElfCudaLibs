@@ -1,19 +1,19 @@
 
 BUILD_TYPE?=BUILD_USER
 
-all: seq_quad seq_lin cuda_n cuda_half
+all: seq_quad seq_lin cuda_usual cuda_proposed
 
 seq_quad: dummy
-	gcc -Wall -O3 -D $(BUILD_TYPE) -D SEQ_QUAD  includes/exec.c Sequential_Quadratic/ElfColCnt.c   -o $@ -lm
+	gcc -Wall -O3 -D $(BUILD_TYPE) -D SEQ_QUAD  src/exec.c src/Sequential_Quadratic.c   -o $@ -lm
 
 seq_lin: dummy
-	gcc -Wall -O3 -D $(BUILD_TYPE) -D SEQ_LIN   includes/exec.c Sequential_Linear/ElfColCnt.c      -o $@ -lm
+	gcc -Wall -O3 -D $(BUILD_TYPE) -D SEQ_LIN   src/exec.c src/Sequential_Linear.c      -o $@ -lm
 
-cuda_n: dummy
-	nvcc -O3      -I ./includes/ -D $(BUILD_TYPE) -D CUDA_N    includes/exec.c CUDA_Usual_Alg/ElfColCnt.cu    -o $@
+cuda_usual: dummy
+	nvcc -O3      -D $(BUILD_TYPE) -D CUDA_N    src/exec.c src/CUDA_Usual_Alg.cu    -o $@
 
-cuda_half: dummy
-	nvcc -O3      -I ./includes/ -D $(BUILD_TYPE) -D CUDA_HALF includes/exec.c CUDA_Proposed_Alg/ElfColCnt.cu -o $@
+cuda_proposed: dummy
+	nvcc -O3      -D $(BUILD_TYPE) -D CUDA_HALF src/exec.c src/CUDA_Proposed_Alg.cu -o $@
 
 test: dummy
 	make BUILD_TYPE=BUILD_TEST

@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "ElfColCnt.h"
+#include "Sequential_Linear.h"
 
 #define COORD3D(V, AXIS) COORD(V.x, V.y, V.z, AXIS)
 #define COORD(X, Y, Z, AXIS) ( (Z+AXIS/2) * ((long int) AXIS*AXIS) + (Y+AXIS/2) * ((long int) AXIS) + (X+AXIS/2))

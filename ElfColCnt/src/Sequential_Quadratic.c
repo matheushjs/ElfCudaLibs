@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "ElfColCnt.h"
+#include "Sequential_Quadratic.h"
 
 /* Documented in header file */
 int count_collisions(ElfInt3d *vector, int size){

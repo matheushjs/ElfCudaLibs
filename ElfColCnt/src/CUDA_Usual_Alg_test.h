@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "ElfColCnt.h"
+#include "CUDA_Usual_Alg.h"
 
 #ifdef BATCH
 	#define BATCH 1
@@ -32,7 +32,7 @@ int test_count(ElfFloat3d *vector, int size, int iters){
 #endif
 
 	printf("Elapsed: %lf ms\n", (clock() - beg) / (double) CLOCKS_PER_SEC * 1000);
-	printf("Collisions [Half Steps Grid Singlerow %s]: %d\n", BATCH ? "Batch" : "Non-Batch", res);
+	printf("Collisions [N Steps Grid 1Row %s]: %d\n", BATCH ? "Batch" : "Non-Batch", res);
 
 	return res;
 }

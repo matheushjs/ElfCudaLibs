@@ -3,9 +3,9 @@
 #include <stdio.h>
 
 extern "C" {
-	#include "ElfColCnt.h"
+	#include "CUDA_Usual_Alg.h"
 }
-#include <utils.h>
+#include "utils.h"
 
 /* Multi-block reduce.
  * Accepts only vectors that are power of 2.
@@ -41,29 +41,35 @@ void reduce(int *vec, int *result){
  * by performing just the outer 'for' in parallel.
  */
 __global__
-void count_collisions_cu(float3 *coords, int *result, int nCoords, int star){
+void count_collisions_cu(float3 *coords, int *result, int nCoords){
 	int baseIdx = blockIdx.x * 1024;
 	int horizontalId = threadIdx.x + blockIdx.x * blockDim.x;
 
+	// Calculate number of iterations to execute
+	// If we have 2048 nCoords and baseIdx is 0, we must execute 2048 iterations.
+	int maxIterations = nCoords - baseIdx;
+
 	// We read our element in a register (surplus threads will read anything)
 	float3 buf = coords[horizontalId % nCoords];
-
-	// Read first 2 blocks into shared memory
+	
+	// Read the 2 blocks into shared memory (surplus threads read anything)
 	extern __shared__ float3 sCoords[];
 	sCoords[threadIdx.x] = coords[ (baseIdx + threadIdx.x) % nCoords ];
 	sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x + 1024) % nCoords ];
 	__syncthreads();
-	
+
 	// Move our base index
 	baseIdx = baseIdx + 2048; // We could use modulus here, but doesn't seem necessary
 
 	// Count collisions
 	int iterations = 0;
-	int collisions = 0;
 	int offset = 1;
-	while(iterations < star){
-		// Do 1024 iterations, or maybe less
-		int limit = min(iterations + 1024, star);
+	int collisions = 0;
+	while(iterations < maxIterations){
+		// At this point of the code, the shared memory has 2048 elements
+		// The first thread has already compared with element 0 on previous round
+
+		int limit = min(iterations + 1024, maxIterations);
 		for(; iterations < limit; iterations++){
 			// We want to check if sqrt( (Vx - Vy)(Vx - Vy) ) <= 1    Vx and Vy are float3 vectors
 			// Which is the same as      (Vx - Vy)(Vx - Vy)   <= 1    and the product is an inner product
@@ -76,7 +82,7 @@ void count_collisions_cu(float3 *coords, int *result, int nCoords, int star){
 
 			// horizontalId + iterations + 1 is the element we are comparing to
 			if(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z <= 1){
-				collisions += 1;
+				collisions += 1 * (horizontalId + iterations + 1 < nCoords);
 			}
 
 			offset++;
@@ -88,7 +94,7 @@ void count_collisions_cu(float3 *coords, int *result, int nCoords, int star){
 		
 		// Rewrite older block with earlier block
 		sCoords[threadIdx.x] = sCoords[threadIdx.x + 1024];
-		// Read new block
+		// Read new block. Modulus prevents invallid memory accesses.
 		sCoords[threadIdx.x + 1024] = coords[ (baseIdx + threadIdx.x) % nCoords ];
 
 		// We also have to sync here
@@ -100,27 +106,10 @@ void count_collisions_cu(float3 *coords, int *result, int nCoords, int star){
 		offset = 1;
 	}
 
-	// The vector has an even number of elements
-	// Because of this, half of the elements must execute one more iteration
-	// Notice that the way the 'for...loop' above was implemented, when the
-	//   code reach this point, the shared memory has valid elements for one
-	//   more iteration, so we don't need to verify it again.
-	// Do one more iteration:
-	if(horizontalId < nCoords/2){
-		collisions += (
-			buf.x == sCoords[threadIdx.x + offset].x
-			&& buf.y == sCoords[threadIdx.x + offset].y
-			&& buf.z == sCoords[threadIdx.x + offset].z
-		);
-		offset++;
-		iterations++;
-	}
-
 	// Sync before reducing collisions on shared memory
 	__syncthreads();
 
-	// Fill shared memory with collisions
-	// We ignore collision from surplus threads
+	// Fill shared memory with collisions (surplus threads are ignored)
 	extern __shared__ int sdata[];
 	sdata[threadIdx.x] = collisions * (horizontalId < nCoords);
 	__syncthreads();
@@ -132,7 +121,7 @@ void count_collisions_cu(float3 *coords, int *result, int nCoords, int star){
 
 		__syncthreads();
 	}
-
+	
 	// Export result
 	if(threadIdx.x == 0){
 		result[blockIdx.x] = sdata[0];
@@ -189,10 +178,6 @@ count_collisions_launch(ElfFloat3d *vector, int size){
 	int nBlocks = divisionCeil(size, nThreads);
 	int nShMem = elemInShmem * sizeof(float3); // Shared memory required
 
-	// Calculate the number of iterations S* (S star); we call it 'star'
-	// We assume 'size' is even, so this formula is correct.
-	int star = (size - 2)/2;
-
 	// Allocate cuda memory for the number of collisions
 	// This will also be used as a working vector for reducing among blocks
 	int resultSize = higherEqualPow2(nBlocks);
@@ -200,8 +185,8 @@ count_collisions_launch(ElfFloat3d *vector, int size){
 	cudaMemsetAsync(d_result, 0, sizeof(int) * resultSize, stream); // Reset is needed due to size overestimation
 
 	// Finally launch kernels
-	count_collisions_cu<<<nBlocks, nThreads, nShMem, stream>>>(d_vector, d_result, size, star);
-
+	count_collisions_cu<<<nBlocks, nThreads, nShMem, stream>>>(d_vector, d_result, size);
+	
 	// Reduce the result vector
 	nBlocks = resultSize/1024;
 	int workSize = resultSize;

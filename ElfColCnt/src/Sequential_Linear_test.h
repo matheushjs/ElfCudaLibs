@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "ElfColCnt.h"
+#include "Sequential_Linear.h"
 
 AXISTYPE *space3d = NULL;
 
