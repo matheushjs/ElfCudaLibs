@@ -18,19 +18,19 @@
  */
 #ifdef SEQ_QUAD
 	#define SEQ_QUAD 1
-	#include "../seq_quadratic/test.h"
+	#include "../Sequential_Quadratic/test.h"
 #endif
 #ifdef SEQ_LIN
 	#define SEQ_LIN 1
-	#include "../seq_linear/test.h"
+	#include "../Sequential_Linear/test.h"
 #endif
 #ifdef CUDA_HALF
 	#define CUDA_HALF 1
-	#include "../cuda_halfsteps/test.h"
+	#include "../CUDA_Proposed_Alg/test.h"
 #endif
 #ifdef CUDA_N
 	#define CUDA_N 1
-	#include "../cuda_nsteps/test.h"
+	#include "../CUDA_Usual_Alg/test.h"
 #endif
 #if SEQ_QUAD != 1 && SEQ_LIN != 1 && CUDA_HALF != 1 && CUDA_N != 1
 	#error "Must specify method!"
