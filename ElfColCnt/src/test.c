@@ -103,7 +103,7 @@ void test(){
 
 #ifdef CUDA_PROPOSED
 void test(){
-	int sizes[] = { 16*1024, 16*1024+220, 220 };
+	int sizes[] = { 16*1024, 16*1024+220, 220, 16*1024+1, 16*1024+221, 221 };
 	int nCases = sizeof(sizes) / sizeof(int);
 	int i;
 	struct CollisionCountPromise promise[3];
@@ -138,7 +138,7 @@ void test(){
 
 #ifdef CUDA_USUAL
 void test(){
-	int sizes[] = { 16*1024, 16*1024+220, 220 };
+	int sizes[] = { 16*1024, 16*1024+220, 220, 16*1024+1, 16*1024+221, 221 };
 	int nCases = sizeof(sizes) / sizeof(int);
 	int i;
 	struct CollisionCountPromise promise[3];

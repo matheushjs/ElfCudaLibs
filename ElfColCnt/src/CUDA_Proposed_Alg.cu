@@ -100,18 +100,23 @@ void count_collisions_cu(float3 *coords, int *result, int nCoords, int star){
 		offset = 1;
 	}
 
-	// The vector has an even number of elements
+	// If the vector has an even number of elements
 	// Because of this, half of the elements must execute one more iteration
 	// Notice that the way the 'for...loop' above was implemented, when the
 	//   code reach this point, the shared memory has valid elements for one
 	//   more iteration, so we don't need to verify it again.
 	// Do one more iteration:
-	if(horizontalId < nCoords/2){
-		collisions += (
-			buf.x == sCoords[threadIdx.x + offset].x
-			&& buf.y == sCoords[threadIdx.x + offset].y
-			&& buf.z == sCoords[threadIdx.x + offset].z
-		);
+	if(horizontalId < nCoords/2 && nCoords%2 == 0){
+		float3 diff = make_float3(
+				buf.x - sCoords[threadIdx.x + offset].x,
+				buf.y - sCoords[threadIdx.x + offset].y,
+				buf.z - sCoords[threadIdx.x + offset].z
+			);
+
+		// horizontalId + iterations + 1 is the element we are comparing to
+		if(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z <= 1){
+			collisions += 1;
+		}
 		offset++;
 		iterations++;
 	}
@@ -170,11 +175,6 @@ cudaStream_t get_next_stream(){
  */
 extern "C" struct CollisionCountPromise
 count_collisions_launch(ElfFloat3d *vector, int size){
-	if(size%2 != 0){
-		fprintf(stderr, "Error: Vector size must be even.\n");
-		exit(1);
-	}
-
 	float3 *d_vector;
 	int *d_result;
 	cudaStream_t stream = get_next_stream();
@@ -189,9 +189,12 @@ count_collisions_launch(ElfFloat3d *vector, int size){
 	int nBlocks = divisionCeil(size, nThreads);
 	int nShMem = elemInShmem * sizeof(float3); // Shared memory required
 
-	// Calculate the number of iterations S* (S star); we call it 'star'
-	// We assume 'size' is even, so this formula is correct.
-	int star = (size - 2)/2;
+	// Calculate the number of iterations S* (S star)
+	// It is the number of iterations where --all-- threads execute work
+	int star;
+	if(size%2 == 0)
+		star = (size - 2)/2;
+	else star = (size - 1)/2;
 
 	// Allocate cuda memory for the number of collisions
 	// This will also be used as a working vector for reducing among blocks
