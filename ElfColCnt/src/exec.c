@@ -37,7 +37,7 @@ void run(int vecSize, int iters, double std, int rrate){
 
 	int beg = clock();
 	int res = 0;
-	static AXISTYPE *space3d = NULL;
+	AXISTYPE *space3d = NULL;
 	int axisSize = (vecSize + 1) * 2;
 	unsigned long memSize = sizeof(AXISTYPE) * axisSize * axisSize * (unsigned long) axisSize;
 
@@ -122,106 +122,6 @@ void run(int vecSize, int iters, double std, int rrate){
 	free(vec);
 }
 #endif
-
-//void test(){
-//	int size = 16 * 1024;
-//	int gold, res;
-//
-//	// SEQ_LIN cannot handle big vectors
-//	#if SEQ_LIN == 1
-//		goto small;
-//	#endif
-//
-//	// Allocate the vectors we need
-//	#if SEQ_QUAD == 1 || SEQ_LIN == 1
-//		ElfInt3d *seq             = vector_seq(size);
-//		ElfInt3d *neigh_paircolls = vector_neigh_paircolls(size);
-//		ElfInt3d *rand_paircolls  = vector_rand_paircolls(size);
-//	#else
-//		ElfFloat3d *seq             = vector_seq_f(size);
-//		ElfFloat3d *neigh_paircolls = vector_neigh_paircolls_f(size);
-//		ElfFloat3d *rand_paircolls  = vector_rand_paircolls_f(size);
-//	#endif
-//
-//	gold = 0;
-//	res = test_count(seq, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	gold = size / 2;
-//	res = test_count(neigh_paircolls, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	gold = size / 2;
-//	res = test_count(rand_paircolls, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	free(seq);
-//	free(neigh_paircolls);
-//	free(rand_paircolls);
-//
-//	// Then we repeat the above, with vectors of more irregular size
-//	size = 16 * 1024 + 220;
-//
-//	#if SEQ_QUAD == 1 || SEQ_LIN == 1
-//		seq             = vector_seq(size);
-//		neigh_paircolls = vector_neigh_paircolls(size);
-//		rand_paircolls  = vector_rand_paircolls(size);
-//	#else
-//		seq             = vector_seq_f(size);
-//		neigh_paircolls = vector_neigh_paircolls_f(size);
-//		rand_paircolls  = vector_rand_paircolls_f(size);
-//	#endif
-//
-//	gold = 0;
-//	res = test_count(seq, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	gold = size / 2;
-//	res = test_count(neigh_paircolls, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	gold = size / 2;
-//	res = test_count(rand_paircolls, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	free(seq);
-//	free(neigh_paircolls);
-//	free(rand_paircolls);
-//
-//#if SEQ_LIN == 1
-//small:
-//#endif
-//
-//	// Then we repeat the above, with a small vector
-//	size = 220;
-//
-//	#if SEQ_QUAD == 1 || SEQ_LIN == 1
-//		seq             = vector_seq(size);
-//		neigh_paircolls = vector_neigh_paircolls(size);
-//		rand_paircolls  = vector_rand_paircolls(size);
-//	#else
-//		seq             = vector_seq_f(size);
-//		neigh_paircolls = vector_neigh_paircolls_f(size);
-//		rand_paircolls  = vector_rand_paircolls_f(size);
-//	#endif
-//
-//	gold = 0;
-//	res = test_count(seq, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	gold = size / 2;
-//	res = test_count(neigh_paircolls, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	gold = size / 2;
-//	res = test_count(rand_paircolls, size, 1);
-//	printf("Size %d: %s\n", size, gold == res ? "SUCCESS!" : "FAILURE");
-//
-//	free(seq);
-//	free(neigh_paircolls);
-//	free(rand_paircolls);
-//}
-
 
 int main(int argc, char *argv[]){
 	int vecSize = 32 * 16 * 1024;
