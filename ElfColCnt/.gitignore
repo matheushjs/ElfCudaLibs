@@ -1,4 +1,8 @@
 seq_lin
 seq_quad
-cuda_n
-cuda_half
+cuda_proposed
+cuda_usual
+test_cuda_proposed
+test_cuda_usual
+test_seq_lin
+test_seq_quad
