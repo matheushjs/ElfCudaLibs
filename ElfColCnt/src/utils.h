@@ -206,9 +206,9 @@ ElfFloat3d *vector_neigh_paircolls_f(int size){
 		result[i].z = i;
 
 		// Next bead is the same as previous
-		result[i+1].x = i;
-		result[i+1].y = i;
-		result[i+1].z = i;
+		result[i+1].x = i+0.1;
+		result[i+1].y = i+0.1;
+		result[i+1].z = i+0.1;
 	}
 
 	return result;
